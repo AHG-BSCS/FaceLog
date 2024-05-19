@@ -4,14 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FaceLog</title>
-    <link rel="stylesheet" href="static/css/style.css">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
 </head>
-<body>
-    <h1>FaceLog</h1>
-    <h4>A real-time face recognition attendance system</h4>
-    <button id="start">Start Webcam</button>
-    <button id="register">Register New User</button>
-    <video id="video" width="640" height="480" autoplay></video>
+<body class="d-flex flex-column justify-content-center align-items-center min-vh-100">
+    <div class="card text-center">
+        <div class="card-header">FaceLog</div>
+        <div class="card-subtitle">A real-time face recognition attendance system</div>
+        <div>
+            <button id="start" class="btn btn-custom me-2">Start Webcam</button>
+            <button id="register" class="btn btn-custom">Register New User</button>
+        </div>
+        <div class="video-container mt-4">
+            <video id="video" width="640" height="480" autoplay></video>
+        </div>
+    </div>
     <script src="static/js/script.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
