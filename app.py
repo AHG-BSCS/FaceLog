@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import cv2
+import os
+import time
 import numpy as np
 import pickle
 from sklearn.svm import SVC
@@ -21,8 +23,28 @@ def index():
 
 @app.route('/register', methods=['POST'])
 def register():
-    # Registration logic to save user faces and update SVM model
-    return jsonify({"status": "success"})
+    nameID = request.form['name']
+    os.makedirs(f'faces/{nameID}', exist_ok=True)
+    
+    cam = cv2.VideoCapture(0)
+    i = 0
+    
+    while True:
+        ret, frame = cam.read()
+        if not ret:
+            break
+        i += 1
+        time.sleep(2)  # Consider using a non-blocking wait for better performance
+        filename = f'faces/{nameID}/{i}.jpg'
+        cv2.imwrite(filename, frame)
+        cv2.imshow('frame', frame)
+        if cv2.waitKey(1) == ord('q') or i >= 50:
+            break
+    
+    cam.release()
+    cv2.destroyAllWindows()
+    
+    return jsonify({"status": "success", "message": f"Registered {nameID} with {i} images."})
 
 @app.route('/recognize', methods=['POST'])
 def recognize():
@@ -63,4 +85,6 @@ def extract_features(image):
     return features
 
 if __name__ == '__main__':
+    # remove # from the line below for DEBUG, else dont lol
     app.run(debug=True)
+    #app.run(host='0.0.0.0',port=5000)
