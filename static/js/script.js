@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     const faceNameElement = document.createElement('div');
+    const registerButton = document.getElementById('register');
 
     startButton.addEventListener('click', () => {
         navigator.mediaDevices.getUserMedia({ video: true })
@@ -18,8 +19,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     registerButton.addEventListener('click', () => {
-        // Logic for registering new user
+        const name = prompt("Enter your name:");
+        if (name) {
+            $.ajax({
+                url: '/register',
+                type: 'POST',
+                data: { name: name },
+                success: (response) => {
+                    alert(response.message);
+                },
+                error: (error) => {
+                    console.error("Error registering user: ", error);
+                }
+            });
+        }
     });
+
 
     function startRecognition() {
         setInterval(() => {
