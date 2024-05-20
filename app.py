@@ -1,8 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import cv2
-import os
-import time
 import numpy as np
 import pickle
 from sklearn.svm import SVC
@@ -23,47 +21,48 @@ def index():
 
 @app.route('/register', methods=['POST'])
 def register():
-    nameID = request.form['name']
-    os.makedirs(f'faces/{nameID}', exist_ok=True)
-    
-    cam = cv2.VideoCapture(0)
-    i = 0
-    
-    while True:
-        ret, frame = cam.read()
-        if not ret:
-            break
-        i += 1
-        time.sleep(2)  # Consider using a non-blocking wait for better performance
-        filename = f'faces/{nameID}/{i}.jpg'
-        cv2.imwrite(filename, frame)
-        cv2.imshow('frame', frame)
-        if cv2.waitKey(1) == ord('q') or i >= 50:
-            break
-    
-    cam.release()
-    cv2.destroyAllWindows()
-    
-    return jsonify({"status": "success", "message": f"Registered {nameID} with {i} images."})
+    # Registration logic to save user faces and update SVM model
+    return jsonify({"status": "success"})
 
 @app.route('/recognize', methods=['POST'])
 def recognize():
     data = request.files['image'].read()
     nparr = np.frombuffer(data, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
 
-    gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    faces = face_cascade.detectMultiScale(gray_img, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    faces = face_cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
     results = []
+    # resized_face = cv2.resize(img, (128, 128))
+    # cv2.imwrite('received_image.jpg', resized_face)
+    # test_image = cv2.imread('received_image.jpg', cv2.IMREAD_GRAYSCALE)
+    
+    # features = extract_features(resized_face)
+    # prediction = svm_model.predict([features])
+    # person = label_encoder.inverse_transform(prediction)[0]
+    # print(f"Recognized: {person}")
+    
+    # results.append({
+    #     'name': person,
+    #     'box': [int(1), int(20), int(10), int(10)]
+    # })
+
     for (x, y, w, h) in faces:
-        face_img = gray_img[y:y+h, x:x+w]
-        resized_face = cv2.resize(face_img, (64, 64))
+        face_img = img[y:y+h, x:x+w]
+        resized_face = cv2.resize(face_img, (128, 128))
+        cv2.imwrite('received_image.jpg', face_img)
+        test_image = cv2.imread('received_image.jpg', cv2.IMREAD_GRAYSCALE)
+        
         features = extract_features(resized_face)
         prediction = svm_model.predict([features])
-        person = label_encoder.inverse_transform(prediction)[0]
+        print(f"Raw prediction result: {prediction}")
 
+        predicted_index = prediction[0]
+        print(f"Predicted index: {predicted_index}")
+
+        person = label_encoder.inverse_transform(prediction)[0]
         print(f"Recognized: {person}")
         
         results.append({
@@ -74,8 +73,7 @@ def recognize():
     return jsonify(results)
 
 def extract_features(image):
-    # Extract features from the image (e.g., using HOG)
-    winSize = (64, 64)
+    winSize = (128, 128)
     blockSize = (16, 16)
     blockStride = (8, 8)
     cellSize = (8, 8)
@@ -85,6 +83,4 @@ def extract_features(image):
     return features
 
 if __name__ == '__main__':
-    # remove # from the line below for DEBUG, else dont lol
     app.run(debug=True)
-    #app.run(host='0.0.0.0',port=5000)

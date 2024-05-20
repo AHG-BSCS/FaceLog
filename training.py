@@ -23,20 +23,37 @@ def load_images_from_folder(folder):
 
 def extract_features(images):
     features = []
-    hog = cv2.HOGDescriptor()
+    winSize = (128, 128)
+    blockSize = (16, 16)
+    blockStride = (8, 8)
+    cellSize = (8, 8)
+    nbins = 9
+    hog = cv2.HOGDescriptor(winSize, blockSize, blockStride, cellSize, nbins)
+    i = 0
+
     for image in images:
-        # Resize image to a fixed size (e.g., 64x64) for consistency
-        image = cv2.resize(image, (64, 64))
-        winSize = (64, 64)
-        blockSize = (16, 16)
-        blockStride = (8, 8)
-        cellSize = (8, 8)
-        nbins = 9
-        hog = cv2.HOGDescriptor(winSize, blockSize, blockStride, cellSize, nbins)
-        # Extract HOG features
-        feature = hog.compute(image).flatten()
-        features.append(feature)
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        faces = face_cascade.detectMultiScale(image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+        if len(faces) == 0:
+            print(f"No faces detected in image: {i}")
+        else:
+            for (x, y, w, h) in faces:
+                face_img = image[y:y+h, x:x+w]
+                newimage = cv2.resize(face_img, (128, 128))
+                feature = hog.compute(newimage).flatten()
+                features.append(feature)
+                break
+        i += 1
     return features
+
+    # for image in images:
+    #     # Resize image to a fixed size (e.g., 64x64) for consistency
+    #     image = cv2.resize(image, (128, 128))
+    #     # Extract HOG features
+    #     feature = hog.compute(image).flatten()
+    #     features.append(feature)
+    # return features
 
 # Load images and labels
 folder_path = 'faces'

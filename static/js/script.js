@@ -6,16 +6,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const faceNameElement = document.createElement('div');
     const registerButton = document.getElementById('register');
 
+    startButton.textContent = 'Start Webcam';
+
     startButton.addEventListener('click', () => {
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                video.srcObject = stream;
-                video.play();
-                startRecognition();
-            })
-            .catch(err => {
-                console.error("Error accessing webcam: ", err);
-            });
+        if (startButton.textContent === 'Stop Webcam') {
+            const stream = video.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+            video.srcObject = null;
+            startButton.textContent = 'Start Webcam';
+        } else {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                    video.play();
+                    startRecognition();
+                    startButton.textContent = 'Stop Webcam';
+                })
+                .catch(err => {
+                    console.error("Error accessing webcam: ", err);
+                });
+        }
     });
 
     registerButton.addEventListener('click', () => {
@@ -55,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => {
                 console.error("Error recognizing face: ", err);
             });
-        }, 1000); // Adjust the interval for smoother fps
+        }, 2000); // Adjust the interval for smoother fps
     }
 
     function drawResults(results) {
