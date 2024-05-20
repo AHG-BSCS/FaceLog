@@ -1,12 +1,10 @@
 import cv2
 import pickle
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, request
 from threading import Thread
 import torch
 from facenet_pytorch import InceptionResnetV1
 import time
-
-app = Flask(__name__)
 
 # Load pre-trained SVM model and label encoder
 with open('models/svm_model.pkl', 'rb') as f:
@@ -77,6 +75,9 @@ def recognize_faces(frame):
 
     return frame
 
+app = Flask(__name__)
+camera = None
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -89,7 +90,18 @@ def gen(camera):
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen(VideoCamera()), mimetype='multipart/x-mixed-replace; boundary=frame')
+    global camera
+    if camera is None:
+        camera = VideoCamera()
+    return Response(gen(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/stop_feed')
+def stop_feed():
+    global camera
+    if camera is not None:
+        camera.__del__()
+        camera = None
+    return 'Webcam stopped'
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -3,31 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real-Time Face Recognition</title>
-    <style>
-        body { text-align: center; }
-        #videoElement { width: 720px; height: 560px; }
-    </style>
+    <title>FaceLog</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="static/css/styles.css">
 </head>
-<body>
-    <h1>Real-Time Face Recognition</h1>
-    <div>
-        <button onclick="startWebcam()">Start Webcam</button>
-        <button onclick="stopWebcam()">Stop Webcam</button>
+<body class="d-flex flex-column justify-content-center align-items-center min-vh-100">
+    <div class="card text-center">
+        <div class="card-header">FaceLog</div>
+        <div class="card-subtitle">A real-time face recognition attendance system</div>
+        <div>
+            <button id="start" class="btn btn-custom me-2">Start Webcam</button>
+            <button id="register" class="btn btn-custom">Register New User</button>
+        </div>
+        <div class="video-container mt-4">
+            <img id="video" width="640" height="480" src="">
+        </div>
     </div>
-    <div>
-        <img id="videoElement" src="" alt="Webcam feed will appear here.">
-    </div>
-    <script>
-        function startWebcam() {
-            const videoElement = document.getElementById('videoElement');
-            videoElement.src = "/video_feed";
-        }
 
-        function stopWebcam() {
-            const videoElement = document.getElementById('videoElement');
-            videoElement.src = "";
-        }
-    </script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Custom JS -->
+    <script src="static/js/script.js"></script>
+    <!-- Bootstrap JS Bundle (including Popper) -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
