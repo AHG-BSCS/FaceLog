@@ -21,7 +21,6 @@ def index():
 
 @app.route('/register', methods=['POST'])
 def register():
-    # Registration logic to save user faces and update SVM model
     return jsonify({"status": "success"})
 
 @app.route('/recognize', methods=['POST'])
@@ -30,40 +29,25 @@ def recognize():
     nparr = np.frombuffer(data, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE)
 
-    # gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     faces = face_cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
     results = []
-    # resized_face = cv2.resize(img, (128, 128))
-    # cv2.imwrite('received_image.jpg', resized_face)
-    # test_image = cv2.imread('received_image.jpg', cv2.IMREAD_GRAYSCALE)
-    
-    # features = extract_features(resized_face)
-    # prediction = svm_model.predict([features])
-    # person = label_encoder.inverse_transform(prediction)[0]
-    # print(f"Recognized: {person}")
-    
-    # results.append({
-    #     'name': person,
-    #     'box': [int(1), int(20), int(10), int(10)]
-    # })
-
     for (x, y, w, h) in faces:
         face_img = img[y:y+h, x:x+w]
-        resized_face = cv2.resize(face_img, (128, 128))
-        cv2.imwrite('received_image.jpg', face_img)
-        test_image = cv2.imread('received_image.jpg', cv2.IMREAD_GRAYSCALE)
+        resized_face = cv2.resize(face_img, (64, 64))
+
+        # Save the face image for debugging
+        cv2.imwrite('debug_image.jpg', face_img)
+        # debug_image = cv2.imread('received_image.jpg', cv2.IMREAD_GRAYSCALE)
         
         features = extract_features(resized_face)
         prediction = svm_model.predict([features])
-        print(f"Raw prediction result: {prediction}")
-
-        predicted_index = prediction[0]
-        print(f"Predicted index: {predicted_index}")
-
+        proba = svm_model.predict_proba([features]).max()
         person = label_encoder.inverse_transform(prediction)[0]
-        print(f"Recognized: {person}")
+
+        print(f"Predicted index: {prediction[0]}")
+        print(f"Recognized: {person} : {proba}%")
         
         results.append({
             'name': person,
@@ -73,7 +57,7 @@ def recognize():
     return jsonify(results)
 
 def extract_features(image):
-    winSize = (128, 128)
+    winSize = (64, 64)
     blockSize = (16, 16)
     blockStride = (8, 8)
     cellSize = (8, 8)

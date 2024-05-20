@@ -11,7 +11,7 @@ with open('models/label_encoder.pkl', 'rb') as f:
 
 # Function to extract HOG features
 def extract_features(image):
-    winSize = (256, 256)
+    winSize = (64, 64)
     blockSize = (16, 16)
     blockStride = (8, 8)
     cellSize = (8, 8)
@@ -21,20 +21,18 @@ def extract_features(image):
     return features
 
 # Load the specific test image
-test_image_path = 'faces/jhondale/01.jpg'
+test_image_path = 'faces/Jhondale/02.jpg'
 test_image = cv2.imread(test_image_path, cv2.IMREAD_GRAYSCALE)
 
-# Preprocess the image: resize to 64x64 (or the size used during training)
-resized_test_image = cv2.resize(test_image, (128, 128))
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+faces = face_cascade.detectMultiScale(test_image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
-# Extract HOG features from the test image
-test_features = extract_features(resized_test_image)
-
-# Predict using the SVM model
-prediction = svm_model.predict([test_features])
-predicted_index = prediction[0]
-
-# Decode the prediction to get the class label
-predicted_label = label_encoder.inverse_transform([predicted_index])[0]
-
-print(f"The predicted label for the test image is: {predicted_label}")
+for (x, y, w, h) in faces:
+    face_img = test_image[y:y+h, x:x+w]
+    resized_test_image = cv2.resize(face_img, (64, 64))
+    test_features = extract_features(resized_test_image)
+    prediction = svm_model.predict([test_features])
+    proba = svm_model.predict_proba([test_features]).max()
+    predicted_label = label_encoder.inverse_transform(prediction)[0]
+    print(f"{predicted_label} : {proba}%")
+    break
