@@ -1,80 +1,79 @@
 import os
 import cv2
+import torch
 import numpy as np
-from sklearn.svm import SVC
+from facenet_pytorch import InceptionResnetV1
 from sklearn.preprocessing import LabelEncoder
+from sklearn.svm import SVC
 import pickle
 
-def load_images_from_folder(folder):
-    images = []
-    labels = []
-    label_names = []
-    image_paths = []
-    for label in os.listdir(folder):
-        label_path = os.path.join(folder, label)
-        if os.path.isdir(label_path):
-            label_names.append(label)
-            for image_name in os.listdir(label_path):
-                image_path = os.path.join(label_path, image_name)
-                image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-                if image is not None:
-                    images.append(image)
-                    labels.append(label)
-                    image_paths.append(image_path)
-    return images, labels, label_names, image_paths
-
-def extract_features_and_clean(images, image_paths):
-    features = []
-    winSize = (64, 64)
-    blockSize = (16, 16)
-    blockStride = (8, 8)
-    cellSize = (8, 8)
-    nbins = 9
-    hog = cv2.HOGDescriptor(winSize, blockSize, blockStride, cellSize, nbins)
-
-    for image, image_path in zip(images, image_paths):
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        faces = face_cascade.detectMultiScale(image, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-        if len(faces) == 0:
-            os.remove(image_path)
-            print(f"Face deleted: {image_path}")
-        else:
-            for (x, y, w, h) in faces:
-                face_img = image[y:y+h, x:x+w]
-                newimage = cv2.resize(face_img, (64, 64))
-                feature = hog.compute(newimage).flatten()
-                features.append(feature)
-                break
+def extract_features(image):
+    # Convert image to RGB if it is grayscale
+    if len(image.shape) == 2 or image.shape[2] == 1:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+    
+    # Resize image to the expected input size of the FaceNet model
+    image = cv2.resize(image, (80, 80))
+    
+    # Normalize the image
+    image = (image / 255.0 - 0.5) * 2.0
+    
+    # Convert to torch tensor
+    image = torch.tensor(image, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0)
+    
+    # Extract features
+    with torch.no_grad():
+        features = model(image).cpu().numpy().flatten()
+    
     return features
 
-# Load images and labels
-folder_path = 'faces'
-images, labels, label_names, image_paths = load_images_from_folder(folder_path)
+# Load the pre-trained FaceNet model
+model = InceptionResnetV1(pretrained='vggface2').eval()
 
-# Extract features from images and delete images without faces
-features = extract_features_and_clean(images, image_paths)
+faces_dir = 'faces'
+X = []
+y = []
 
-# Encode labels into numeric values
+for person_name in os.listdir(faces_dir):
+    person_dir = os.path.join(faces_dir, person_name)
+    if not os.path.isdir(person_dir):
+        continue
+    for image_name in os.listdir(person_dir):
+        image_path = os.path.join(person_dir, image_name)
+        image = cv2.imread(image_path)
+        if image is None:
+            continue
+        gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        
+        for (x, z, w, h) in faces:
+            face_img = image[z:z+h, x:x+w]
+            features = extract_features(face_img)
+            break
+        X.append(features)
+        y.append(person_name)
+
+X = np.array(X)
+y = np.array(y)
+
+# Encode labels
 label_encoder = LabelEncoder()
-labels_encoded = label_encoder.fit_transform(labels)
+y = label_encoder.fit_transform(y)
 
-# Train the SVM model
-X = np.array(features)
-y = np.array(labels_encoded)
-svm = SVC(kernel='linear', probability=True)
-svm.fit(X, y)
+# Train SVM model
+svm_model = SVC(kernel='linear', probability=True)
+svm_model.fit(X, y)
 
-model_path = 'models/svm_model.pkl'
-with open(model_path, 'wb') as f:
-    pickle.dump(svm, f)
+# Save the model and label encoder
+with open('models/svm_model.pkl', 'wb') as f:
+    pickle.dump(svm_model, f)
 
-label_encoder_path = 'models/label_encoder.pkl'
-with open(label_encoder_path, 'wb') as f:
+with open('models/label_encoder.pkl', 'wb') as f:
     pickle.dump(label_encoder, f)
 
 # Get the unique classes from the SVM model
-unique_classes = svm.classes_
+unique_classes = svm_model.classes_
 num_classes = len(unique_classes)
 
 print("Model Saved")

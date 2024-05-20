@@ -21,7 +21,7 @@ def extract_features(image):
     return features
 
 # Load the specific test image
-test_image_path = 'faces/Jhondale/02.jpg'
+test_image_path = 'faces/Portrait.jpg'
 test_image = cv2.imread(test_image_path, cv2.IMREAD_GRAYSCALE)
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
