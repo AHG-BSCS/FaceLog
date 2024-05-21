@@ -12,15 +12,17 @@
     <link rel="stylesheet" href="static/css/styles.css">
 </head>
 <body class="d-flex flex-column justify-content-center align-items-center min-vh-100">
-    <div class="card text-center">
+    <div class="card">
         <div class="card-header">FaceLog</div>
-        <div class="card-subtitle">A real-time face recognition attendance system</div>
+        <div class="card-subtitle">A Real-time Facial Recognition Attendance System</div>
         <div>
-            <button id="start" class="btn btn-custom me-2">Start Webcam</button>
-            <button id="register" class="btn btn-custom">Register New User</button>
+            <button id="start" class="btn btn-custom">Start Camera</button>
+            <button id="register" class="btn btn-custom">Register Now</button>
         </div>
         <div class="video-container mt-4">
-            <img id="video" width="640" height="480" src="">
+            <img id="video" width="1280" height="720" src="">
+            <div id="flash"></div>
+        <div id="imageCount"></div>
         </div>
     </div>
 
