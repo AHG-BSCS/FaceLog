@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     flashInterval = null;
 
     startButton.addEventListener('click', () => {
+        startButton.disabled = true;
         if (startButton.textContent === 'Stop Camera') {
             startButton.textContent = 'Start Camera';
             registerButton.disabled = false;
@@ -20,9 +21,14 @@ document.addEventListener('DOMContentLoaded', () => {
             registerButton.disabled  = true;
             trainButton.disabled = true;
         }
+        // Enable button after 3 seconds to prevent multiple clicks
+        setTimeout(() => {
+            startButton.disabled = false;
+        }, 3000);
     });
 
     registerButton.addEventListener('click', () => {
+        registerButton.disabled = true;
         if (registerButton.textContent === 'Stop Capturing') {
             clearInterval(flashInterval);
             registerButton.textContent = 'Register Now';
@@ -39,13 +45,17 @@ document.addEventListener('DOMContentLoaded', () => {
             trainButton.disabled = true;
             video.addEventListener('load', handleVideoLoad);
         }
+        // Enable button after 3 seconds to prevent multiple clicks
+        setTimeout(() => {
+            registerButton.disabled = false;
+        }, 3000);
     });
 
     trainButton.addEventListener('click', () => {
-        trainButton.textContent = 'Training...';
         trainButton.disabled = true;
         startButton.disabled = true;
         registerButton.disabled = true;
+        trainButton.textContent = 'Training...';
 
         alert('Waiting for training to complete...');
         fetch('/training')
@@ -57,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     trainButton.disabled = false;
                     startButton.disabled = false;
                     registerButton.disabled = false;
-                    trainButton.textContent = 'Train Model';
+                    trainButton.textContent = 'Update Model';
                     alert(data.message);
                 }
             });
@@ -94,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 flash.style.opacity = 1;
                 setTimeout(() => {
                     flash.style.opacity = 0;
-                }, 300);
+                }, 100);
                 
                 count++;
                 imageCount.textContent = `${count}/50`;
