@@ -15,19 +15,19 @@
     <div class="card">
         <div class="card-header">FaceLog</div>
         <div class="card-subtitle">A Real-time Facial Recognition Attendance System</div>
-        <div class="m-3">
-            <label for="cameraSelect" class="form-label">Select Camera:</label>
-            <select id="cameraSelect" class="form-select"></select>
-        </div>
         <div>
             <button id="start" class="btn btn-custom">Start Camera</button>
             <button id="register" class="btn btn-custom">Register Now</button>
             <button id="train" class="btn btn-custom">Update Model</button>
         </div>
         <div class="video-container mt-4">
-            <video id="video" width="640" height="480" autoplay></video>
+            <img id="video" width="640" height="480"></img>
             <div id="flash"></div>
             <div id="imageCount"></div>
+            <!-- <label for="cameraSelect">Select Camera:</label>
+            <select id="cameraSelect">
+                <optgroup label="Available Cameras" id="cameraGroup"></optgroup>
+            </select> -->
         </div>
     </div>
 

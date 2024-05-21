@@ -22,53 +22,60 @@ facenet_model = InceptionResnetV1(pretrained='vggface2').eval()
 
 app = Flask(__name__)
 camera = None
-cameramode = None
+camera_mode = None
+camera_index = 0
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/face_recognition', methods=['GET'])
+def face_recognition():
+    global camera
+    global camera_mode
+    # global camera_index
+
+    # camera_index = int(request.args.get('cameraIndex'))
+    # camera_index -= 1
+    if camera is None:
+        camera = VideoCamera()
+        camera_mode = 'recognition'
+    return Response(gen(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/face_capturing', methods=['GET'])
+def face_capturing():
+    global camera
+    global camera_mode
+    # global camera_index
+    
+    # camera_index = int(request.args.get('cameraIndex'))
+    # camera_index -= 1
+    if camera is None:
+        camera = VideoCamera()
+        camera_mode = 'capture'
+    return Response(gen(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def gen(camera):
     while True:
         frame = camera.get_frame()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
-
-@app.route('/face_recognition')
-def face_recognition():
-    global camera
-    global cameramode
-
-    if camera is None:
-        camera = VideoCamera()
-        cameramode = 'recognition'
-    return Response(gen(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/face_capturing')
-def face_capturing():
-    global camera
-    global cameramode
-    
-    if camera is None:
-        camera = VideoCamera()
-        cameramode = 'capture'
-    return Response(gen(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
-
+        
 @app.route('/stop_feed')
 def stop_feed():
     global camera
-    global cameramode
+    global camera_mode
 
     if camera is not None:
         camera.__del__()
         camera = None
-        cameramode = None
+        camera_mode = None
     return 'Webcam stopped'
 
 @app.route('/capture_images', methods=['POST'])
 def capture_images():
     global camera
-    global cameramode
+    global camera_mode
 
     user_name = request.json.get('user_name')
     if not user_name:
@@ -149,6 +156,11 @@ def training():
         print(f"Class {i}: {decoded_label}")
     return jsonify({"message" : f"Registered Faces: {num_classes}"})
     
+# @app.route('/list_cameras', methods=['GET'])
+# def get_cameras():
+#     cameras = list_cameras()
+#     return jsonify(cameras)
+
 # Threading for video capture and processing
 class VideoCamera:
     def __init__(self):
@@ -173,7 +185,7 @@ class VideoCamera:
 
         # Perform face recognition every 0.1 seconds
         if current_time - self.last_recognition_time >= 0.1:
-            if cameramode == 'recognition':
+            if camera_mode == 'recognition':
                 frame = recognize_faces(frame)
                 self.last_recognition_time = current_time
         ret, jpeg = cv2.imencode('.jpg', frame)
@@ -220,6 +232,19 @@ def extract_features(image):
     with torch.no_grad():
         features = facenet_model(image).cpu().numpy().flatten()
     return features
+
+def list_cameras():
+    index = 0
+    arr = []
+    while True:
+        cap = cv2.VideoCapture(index)
+        if not cap.read()[0]:
+            break
+        else:
+            arr.append(index)
+        cap.release()
+        index += 1
+    return arr
 
 def select_camera():
     num_cameras = 0
