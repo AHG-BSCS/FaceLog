@@ -56,7 +56,7 @@ def face_capturing():
     return Response(gen(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def gen(camera):
-    while True:
+    while camera.running:
         frame = camera.get_frame()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
@@ -89,11 +89,9 @@ def capture_images():
     while count < 50:
         if camera is None:
             break
-        frame = camera.get_frame_as_image()
+        frame = camera.capture_frame()
         file_path = os.path.join(user_folder, f'{count + 1}.jpg')
         cv2.imwrite(file_path, frame)
-        
-        camera.set_flash()
         count += 1
         cv2.waitKey(800)
 
@@ -156,7 +154,7 @@ def training():
         print(f"Class {i}: {decoded_label}")
     return jsonify({"message" : f"Registered Faces: {num_classes}"})
     
-# @app.route('/list_cameras', methods=['GET'])
+# @app.route('/list_cameras', methods=['GET'])]
 # def get_cameras():
 #     cameras = list_cameras()
 #     return jsonify(cameras)
@@ -167,17 +165,14 @@ class VideoCamera:
         self.video = cv2.VideoCapture(0)
         self.grabbed, self.frame = self.video.read()
         self.last_recognition_time = time.time()
+        self.running = True
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
         self.thread.start()
-        self.flash = False
 
     def update(self):
-        while True:
+        while self.running:
             self.grabbed, self.frame = self.video.read()
-            if self.flash:
-                self.frame[:] = 0  # Set frame to black
-                self.flash = False
 
     def get_frame(self):
         frame = self.frame.copy()
@@ -191,16 +186,11 @@ class VideoCamera:
         ret, jpeg = cv2.imencode('.jpg', frame)
         return jpeg.tobytes()
 
-    def get_frame_as_image(self):
-        return self.frame.copy()
-
     def capture_frame(self):
         return self.frame.copy()
     
-    def set_flash(self):
-        self.flash = True
-    
     def __del__(self):
+        self.running = False
         self.video.release()
 
 def recognize_faces(frame):
@@ -216,10 +206,10 @@ def recognize_faces(frame):
         proba = svm_model.predict_proba([features]).max()
         person = label_encoder.inverse_transform(prediction)[0]
 
-        if proba > 0.6:
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        if proba > 0.3:
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
             text = f'{person} ({proba:.2f})'
-            cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+            cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
     return frame
 

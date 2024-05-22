@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
             startButton.textContent = 'Start Camera';
             registerButton.disabled = false;
             trainButton.disabled = false;
-            video.src = "";
+            video.src = null;
             fetch('/stop_feed');
         } else {
             startButton.textContent = 'Stop Camera';
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(flashInterval);
             registerButton.textContent = 'Register Now';
             imageCount.textContent = '';
-            video.src = "";
+            video.src = null;
             startButton.disabled = false;
             trainButton.disabled = false;
             fetch('/stop_feed');
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!userName) {
             alert("User name is required.");
             registerButton.textContent = 'Register Now';
-            video.src = "";
+            video.src = null;
             fetch('/stop_feed');
             return;
         } else {
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     clearInterval(flashInterval);
                     registerButton.textContent = 'Register Now';
                     imageCount.textContent = '';
-                    video.src = "";
+                    video.src = null;
                     fetch('/stop_feed');
                     fetch('/train_model')
                         .then(response => response.json())
