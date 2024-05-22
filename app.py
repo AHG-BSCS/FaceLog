@@ -9,6 +9,8 @@ from threading import Thread
 from facenet_pytorch import InceptionResnetV1
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
+import pandas as pd
+import datetime
 
 # Load pre-trained SVM model and label encoder
 with open('models/svm_model.pkl', 'rb') as f:
@@ -198,19 +200,45 @@ def recognize_faces(frame):
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
+    # Create a DataFrame to store the detection results
+    if not os.path.exists('attendance.xlsx'):
+        df = pd.DataFrame(columns=['Person', 'Date', 'Time', 'Probability'])
+    else:
+        df = pd.read_excel('attendance.xlsx')
+
     for (x, y, w, h) in faces:
         face_img = frame[y:y+h, x:x+w]
         features = extract_features(face_img)
 
         prediction = svm_model.predict([features])
         proba = svm_model.predict_proba([features]).max()
+        proba = round(proba, 2)
         person = label_encoder.inverse_transform(prediction)[0]
 
         if proba > 0.3:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
-            text = f'{person} ({proba:.2f})'
+            text = f'{person} ({proba}%)'
             cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
+            if proba > 0.6:
+                # Add the detection results to the DataFrame
+                date = datetime.datetime.now().strftime("%m/%d/%Y")
+                time = datetime.datetime.now().strftime("%I:%M:%S %p")
+
+                # Check if the person already exists in the DataFrame
+                existing_record = df[df['Person'] == person]
+
+                if not existing_record.empty:
+                    # If the person exists and the new probability is higher, update the record
+                    if proba > existing_record['Probability'].values[0]:
+                        df.loc[existing_record.index, 'Probability'] = proba
+                else:
+                    # If the person doesn't exist, append the new record
+                    df = df._append({'Person': person, 'Date': date, 'Time': time, 'Probability': proba}, ignore_index=True)
+
+    # Save the DataFrame to an Excel file
+    if not df.empty:
+        df.to_excel('attendance.xlsx', index=False)
     return frame
 
 def extract_features(image):
