@@ -1,16 +1,16 @@
 import os
 import cv2
 import time
-import pickle
+import datetime
 import torch
+import pickle
 import numpy as np
+import pandas as pd
 from flask import Flask, render_template, Response, request, jsonify
 from threading import Thread
 from facenet_pytorch import InceptionResnetV1
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
-import pandas as pd
-import datetime
 
 # Load pre-trained SVM model and label encoder
 with open('models/svm_model.pkl', 'rb') as f:
@@ -26,6 +26,12 @@ app = Flask(__name__)
 camera = None
 camera_mode = None
 camera_index = 0
+
+# Create a DataFrame to store the detection results
+if not os.path.exists('attendance.xlsx'):
+    attendance = pd.DataFrame(columns=['Name', 'Date', 'Time', 'Probability'])
+else:
+    attendance = pd.read_excel('attendance.xlsx')
 
 @app.route('/')
 def index():
@@ -163,10 +169,12 @@ def training():
 
 # Threading for video capture and processing
 class VideoCamera:
+    global attendance
     def __init__(self):
         self.video = cv2.VideoCapture(0)
         self.grabbed, self.frame = self.video.read()
         self.last_recognition_time = time.time()
+        self.last_save_attendance = time.time()
         self.running = True
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
@@ -183,8 +191,9 @@ class VideoCamera:
         # Perform face recognition every 0.1 seconds
         if current_time - self.last_recognition_time >= 0.1:
             if camera_mode == 'recognition':
-                frame = recognize_faces(frame)
+                frame = recognize_faces(frame, self.last_save_attendance)
                 self.last_recognition_time = current_time
+        
         ret, jpeg = cv2.imencode('.jpg', frame)
         return jpeg.tobytes()
 
@@ -195,16 +204,12 @@ class VideoCamera:
         self.running = False
         self.video.release()
 
-def recognize_faces(frame):
+def recognize_faces(frame, last_save_attendance):
+    global attendance
+    current_time = time.time()
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-    # Create a DataFrame to store the detection results
-    if not os.path.exists('attendance.xlsx'):
-        df = pd.DataFrame(columns=['Person', 'Date', 'Time', 'Probability'])
-    else:
-        df = pd.read_excel('attendance.xlsx')
 
     for (x, y, w, h) in faces:
         face_img = frame[y:y+h, x:x+w]
@@ -218,27 +223,29 @@ def recognize_faces(frame):
         if proba > 0.3:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
             text = f'{person} ({proba}%)'
-            cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
-            if proba > 0.6:
-                # Add the detection results to the DataFrame
-                date = datetime.datetime.now().strftime("%m/%d/%Y")
-                time = datetime.datetime.now().strftime("%I:%M:%S %p")
-
+            if proba > 0.8:
                 # Check if the person already exists in the DataFrame
-                existing_record = df[df['Person'] == person]
+                existing_record = attendance[attendance['Name'] == person]
 
                 if not existing_record.empty:
+                    confirm_text = f'Attendance recorded'
+                    cv2.putText(frame, confirm_text, (x, y-30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                     # If the person exists and the new probability is higher, update the record
                     if proba > existing_record['Probability'].values[0]:
-                        df.loc[existing_record.index, 'Probability'] = proba
+                        attendance.loc[existing_record.index, 'Probability'] = proba
                 else:
                     # If the person doesn't exist, append the new record
-                    df = df._append({'Person': person, 'Date': date, 'Time': time, 'Probability': proba}, ignore_index=True)
+                    attendance_date = datetime.datetime.now().strftime("%m/%d/%Y")
+                    attendance_time = datetime.datetime.now().strftime("%I:%M:%S %p")
+                    attendance = attendance._append({'Name': person, 'Date': attendance_date, 'Time': attendance_time, 'Probability': proba}, ignore_index=True)
 
-    # Save the DataFrame to an Excel file
-    if not df.empty:
-        df.to_excel('attendance.xlsx', index=False)
+    # Save the Attendance every 3 seconds
+    if current_time - last_save_attendance >= 3:
+        if not attendance.empty:
+            attendance.to_excel('attendance.xlsx', index=False)
+            last_save_attendance = current_time
     return frame
 
 def extract_features(image):
