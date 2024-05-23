@@ -34,7 +34,7 @@ last_save_attendance = time.time()
 if not os.path.exists('attendance'):
     os.makedirs('attendance')
 if not os.path.exists(f'{attendance_folder}.xlsx'):
-    attendance = pd.DataFrame(columns=['Name', 'Date', 'Time', 'Probability'])
+    attendance = pd.DataFrame(columns=['Name', 'Time', 'Probability'])
 else:
     attendance = pd.read_excel(f'{attendance_folder}.xlsx')
 
@@ -297,9 +297,8 @@ def recognize_faces(frame):
 
             # If the person doesn't exist, append the new record
             if proba > 0.7 and existing_record.empty:
-                attendance_date = datetime.datetime.now().strftime("%m/%d/%Y")
                 attendance_time = datetime.datetime.now().strftime("%I:%M:%S %p")
-                attendance = attendance._append({'Name': person, 'Date': attendance_date, 'Time': attendance_time, 'Probability': proba}, ignore_index=True)
+                attendance = attendance._append({'Name': person, 'Time': attendance_time, 'Probability': proba}, ignore_index=True)
 
     # Save the Attendance every 10 seconds
     if current_time - last_save_attendance >= 10:
