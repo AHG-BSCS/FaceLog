@@ -27,11 +27,17 @@ camera = None
 camera_mode = None
 camera_index = 0
 
-# Create a DataFrame to store the detection results
-if not os.path.exists('attendance.xlsx'):
+# Create the attendance folder and file
+today = datetime.date.today().strftime('%m%d%Y')
+attendance_folder = os.path.join('attendance', today)
+last_save_attendance = time.time()
+
+if not os.path.exists('attendance'):
+    os.makedirs('attendance')
+if not os.path.exists(f'{attendance_folder}.xlsx'):
     attendance = pd.DataFrame(columns=['Name', 'Date', 'Time', 'Probability'])
 else:
-    attendance = pd.read_excel('attendance.xlsx')
+    attendance = pd.read_excel(f'{attendance_folder}.xlsx')
 
 @app.route('/')
 def index():
@@ -73,11 +79,16 @@ def gen(camera):
 def stop_feed():
     global camera
     global camera_mode
+    global attendance
 
     if camera is not None:
         camera.__del__()
         camera = None
         camera_mode = None
+
+    if not attendance.empty:
+        attendance = attendance.sort_values(by='Name')
+        attendance.to_excel(f'{attendance_folder}.xlsx', index=False)
     return 'Webcam stopped'
 
 @app.route('/capture_images', methods=['POST'])
@@ -170,11 +181,12 @@ def training():
 # Threading for video capture and processing
 class VideoCamera:
     global attendance
+    global camera_index
+
     def __init__(self):
-        self.video = cv2.VideoCapture(0)
+        self.video = cv2.VideoCapture(camera_index)
         self.grabbed, self.frame = self.video.read()
         self.last_recognition_time = time.time()
-        self.last_save_attendance = time.time()
         self.running = True
         self.thread = Thread(target=self.update, args=())
         self.thread.daemon = True
@@ -191,7 +203,7 @@ class VideoCamera:
         # Perform face recognition every 0.1 seconds
         if current_time - self.last_recognition_time >= 0.1:
             if camera_mode == 'recognition':
-                frame = recognize_faces(frame, self.last_save_attendance)
+                frame = recognize_faces(frame)
                 self.last_recognition_time = current_time
         
         ret, jpeg = cv2.imencode('.jpg', frame)
@@ -204,9 +216,12 @@ class VideoCamera:
         self.running = False
         self.video.release()
 
-def recognize_faces(frame, last_save_attendance):
+def recognize_faces(frame):
     global attendance
+    global attendance_folder
+    global last_save_attendance
     current_time = time.time()
+
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
@@ -221,30 +236,31 @@ def recognize_faces(frame, last_save_attendance):
         person = label_encoder.inverse_transform(prediction)[0]
 
         if proba > 0.3:
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
-            text = f'{person} ({proba}%)'
-            cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            # Check if the person already exists in the DataFrame
+            existing_record = attendance[attendance['Name'] == person]
+            if existing_record.empty:
+                cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
+                text = f'{person} ({proba}%)'
+                cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+            else:
+                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                text = f'{person} ({proba}%)'
+                cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                # If the person exists and the new probability is higher, update the record
+                if proba > existing_record['Probability'].values[0]:
+                    attendance.loc[existing_record.index, 'Probability'] = proba
 
-            if proba > 0.8:
-                # Check if the person already exists in the DataFrame
-                existing_record = attendance[attendance['Name'] == person]
+            # If the person doesn't exist, append the new record
+            if proba > 0.8 and existing_record.empty:
+                attendance_date = datetime.datetime.now().strftime("%m/%d/%Y")
+                attendance_time = datetime.datetime.now().strftime("%I:%M:%S %p")
+                attendance = attendance._append({'Name': person, 'Date': attendance_date, 'Time': attendance_time, 'Probability': proba}, ignore_index=True)
 
-                if not existing_record.empty:
-                    confirm_text = f'Attendance recorded'
-                    cv2.putText(frame, confirm_text, (x, y-30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                    # If the person exists and the new probability is higher, update the record
-                    if proba > existing_record['Probability'].values[0]:
-                        attendance.loc[existing_record.index, 'Probability'] = proba
-                else:
-                    # If the person doesn't exist, append the new record
-                    attendance_date = datetime.datetime.now().strftime("%m/%d/%Y")
-                    attendance_time = datetime.datetime.now().strftime("%I:%M:%S %p")
-                    attendance = attendance._append({'Name': person, 'Date': attendance_date, 'Time': attendance_time, 'Probability': proba}, ignore_index=True)
-
-    # Save the Attendance every 3 seconds
-    if current_time - last_save_attendance >= 3:
+    # Save the Attendance every 10 seconds
+    if current_time - last_save_attendance >= 10:
         if not attendance.empty:
-            attendance.to_excel('attendance.xlsx', index=False)
+            attendance = attendance.sort_values(by='Name')
+            attendance.to_excel(f'{attendance_folder}.xlsx', index=False)
             last_save_attendance = current_time
     return frame
 
@@ -258,46 +274,46 @@ def extract_features(image):
         features = facenet_model(image).cpu().numpy().flatten()
     return features
 
-def list_cameras():
-    index = 0
-    arr = []
-    while True:
-        cap = cv2.VideoCapture(index)
-        if not cap.read()[0]:
-            break
-        else:
-            arr.append(index)
-        cap.release()
-        index += 1
-    return arr
+# def list_cameras():
+#     index = 0
+#     arr = []
+#     while True:
+#         cap = cv2.VideoCapture(index)
+#         if not cap.read()[0]:
+#             break
+#         else:
+#             arr.append(index)
+#         cap.release()
+#         index += 1
+#     return arr
 
-def select_camera():
-    num_cameras = 0
-    camera_info = []
-    for i in range(10):  
-        cap = cv2.VideoCapture(i)
-        if cap.isOpened():
-            num_cameras += 1
-            camera_name = cap.get(cv2.CAP_PROP_POS_MSEC)
-            camera_info.append((i, camera_name))
-            cap.release()
-        else:
-            break
+# def select_camera():
+#     num_cameras = 0
+#     camera_info = []
+#     for i in range(10):  
+#         cap = cv2.VideoCapture(i)
+#         if cap.isOpened():
+#             num_cameras += 1
+#             camera_name = cap.get(cv2.CAP_PROP_POS_MSEC)
+#             camera_info.append((i, camera_name))
+#             cap.release()
+#         else:
+#             break
 
-    print("Cameras:")
-    for camera_id, camera_name in camera_info:
-        print(f"[{camera_id}] {camera_name}")
+#     print("Cameras:")
+#     for camera_id, camera_name in camera_info:
+#         print(f"[{camera_id}] {camera_name}")
 
-    while True:
-        camera_id = input("Camera #: ")
-        try:
-            camera_id = int(camera_id)
-            if 0 <= camera_id < num_cameras:
-                return camera_id
-            else:
-                print("Invalid Camera!")
-        except ValueError:
-            print("Invalid Input!")
+#     while True:
+#         camera_id = input("Camera #: ")
+#         try:
+#             camera_id = int(camera_id)
+#             if 0 <= camera_id < num_cameras:
+#                 return camera_id
+#             else:
+#                 print("Invalid Camera!")
+#         except ValueError:
+#             print("Invalid Input!")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
