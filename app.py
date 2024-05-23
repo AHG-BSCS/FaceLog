@@ -361,4 +361,4 @@ def extract_features(image):
 #             print("Invalid Input!")
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(host='0.0.0.0',port=5000,debug=True)
