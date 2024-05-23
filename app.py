@@ -185,23 +185,26 @@ def analyze_model():
     
     # Plot the data points and decision boundaries
     plt.figure(figsize=(10, 8))
-    plt.autoscale()
-    plt.grid(True)
-    
     random_color = generate_random_color()
     name_index = 0
-    for i, label in enumerate(labels):
-        if label != label_encoder.inverse_transform([name_index])[0]:
+    plt.scatter(transformed_data[0, 0], transformed_data[0, 1], label=label_encoder.inverse_transform([name_index])[0], c=random_color)
+    
+    for i in range(len(labels)):
+        if labels[i] != label_encoder.inverse_transform([name_index])[0]:
             random_color = generate_random_color()
-            plt.scatter(transformed_data[i, 0], transformed_data[i, 1], label=label_encoder.inverse_transform([name_index])[0], c=random_color)
             name_index += 1
+            plt.scatter(transformed_data[i, 0], transformed_data[i, 1], label=label_encoder.inverse_transform([name_index])[0], c=random_color)
         else:
             plt.scatter(transformed_data[i, 0], transformed_data[i, 1], c=random_color)
-            
+    
+    # Set the plot properties
+    plt.xlim(transformed_data[:, 0].min() - 0.1, transformed_data[:, 0].max() + 0.3)
+    plt.ylim(transformed_data[:, 1].min() - 0.1, transformed_data[:, 1].max() + 0.1)
+    plt.grid(True)
     plt.legend()
-    plt.xlabel('PCA Component 1')
-    plt.ylabel('PCA Component 2')
-    plt.title('FaceLog SVM Model Visualization')
+    plt.xlabel('PCA Component Y')
+    plt.ylabel('PCA Component X')
+    plt.title('FaceLog SVM Model Scatter Plot')
     
     # Save the plot to a BytesIO object
     img = io.BytesIO()

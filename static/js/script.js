@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
             startButton.textContent = 'Start Camera';
             registerButton.disabled = false;
             trainButton.disabled = false;
+            analyzeButton.disabled = false;
             video.src = null;
             fetch('/stop_feed');
         } else {
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             video.src = "/face_recognition";
             registerButton.disabled  = true;
             trainButton.disabled = true;
+            analyzeButton.disabled = true;
         }
         // Enable button after 3 seconds to prevent multiple clicks
         setTimeout(() => {
@@ -51,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             video.src = null;
             startButton.disabled = false;
             trainButton.disabled = false;
+            analyzeButton.disabled = false;
             fetch('/stop_feed');
             video.removeEventListener('load', handleVideoLoad);
         } else {
@@ -59,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             video.src = "/face_capturing";
             startButton.disabled = true;
             trainButton.disabled = true;
+            analyzeButton.disabled = true;
             video.addEventListener('load', handleVideoLoad);
         }
         // Enable button after 3 seconds to prevent multiple clicks
@@ -71,9 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
         trainButton.disabled = true;
         startButton.disabled = true;
         registerButton.disabled = true;
+        analyzeButton.disabled = true;
         trainButton.textContent = 'Training...';
-
-        alert('Waiting for training to complete...');
         fetch('/training')
             .then(response => response.json())
             .then(data => {
@@ -83,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     trainButton.disabled = false;
                     startButton.disabled = false;
                     registerButton.disabled = false;
+                    analyzeButton.disabled = false;
                     trainButton.textContent = 'Update Model';
                     alert(data.message);
                 }
@@ -94,11 +98,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function analyzeModel() {
-        const analysis = document.getElementById('analysis');
+        startButton.disabled = true;
+        registerButton.disabled = true;
+        trainButton.disabled = true;
+        analyzeButton.disabled = true;
+        analyzeButton.textContent = 'Analyzing...';
         video.src = '/analyze_model';
+        video.addEventListener('load', handleVisualizerLoad);
     }
 
     function handleVideoLoad() {
+        video.removeEventListener('load', handleVideoLoad);
         const userName = prompt("Enter Name:");
         if (!userName) {
             alert("User name is required.");
@@ -152,6 +162,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, 800);
         }
-        video.removeEventListener('load', handleVideoLoad);
+    }
+
+    function handleVisualizerLoad() {
+        video.removeEventListener('load', handleVisualizerLoad);
+        startButton.disabled = false;
+        registerButton.disabled = false;
+        trainButton.disabled = false;
+        analyzeButton.disabled = false;
+        analyzeButton.textContent = 'Analyze Model';
     }
 });
