@@ -1,31 +1,30 @@
 import os
+import io
 import cv2
 import time
 import datetime
+import random
 import torch
-import pickle
+import joblib
 import numpy as np
 import pandas as pd
-from flask import Flask, render_template, Response, request, jsonify
+import matplotlib.pyplot as plt
+from flask import Flask, render_template, Response, request, jsonify, send_file
 from threading import Thread
 from facenet_pytorch import InceptionResnetV1
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
-
-# Load pre-trained SVM model and label encoder
-with open('models/svm_model.pkl', 'rb') as f:
-    svm_model = pickle.load(f)
-
-with open('models/label_encoder.pkl', 'rb') as f:
-    label_encoder = pickle.load(f)
-
-# Load the pre-trained FaceNet model
-facenet_model = InceptionResnetV1(pretrained='vggface2').eval()
+from sklearn.decomposition import PCA
 
 app = Flask(__name__)
 camera = None
 camera_mode = None
 camera_index = 0
+
+# Load face recognition models
+svm_model = joblib.load('models/svm_model.pkl')
+label_encoder = joblib.load('models/label_encoder.pkl')
+facenet_model = InceptionResnetV1(pretrained='vggface2').eval()
 
 # Create the attendance folder and file
 today = datetime.date.today().strftime('%m%d%Y')
@@ -135,7 +134,7 @@ def training():
                 continue
             gray_frame = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-            faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+            faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(64, 64))
             
             for (x, z, w, h) in faces:
                 face_img = image[z:z+h, x:x+w]
@@ -147,20 +146,21 @@ def training():
     X = np.array(X)
     y = np.array(y)
 
+    # Save features and labels
+    np.save('models/features.npy', X)
+    np.save('models/labels.npy', y)
+    
     # Encode labels
     label_encoder = LabelEncoder()
-    y = label_encoder.fit_transform(y)
+    y_encoded = label_encoder.fit_transform(y)
 
     # Train SVM model
     svm_model = SVC(kernel='linear', probability=True)
-    svm_model.fit(X, y)
+    svm_model.fit(X, y_encoded)
 
-    # Save the model and label encoder
-    with open('models/svm_model.pkl', 'wb') as f:
-        pickle.dump(svm_model, f)
-
-    with open('models/label_encoder.pkl', 'wb') as f:
-        pickle.dump(label_encoder, f)
+    # Save model and label encoder
+    joblib.dump(svm_model, 'models/svm_model.pkl')
+    joblib.dump(label_encoder, 'models/label_encoder.pkl')
 
     # Get the unique classes from the SVM model
     unique_classes = svm_model.classes_
@@ -173,6 +173,50 @@ def training():
         print(f"Class {i}: {decoded_label}")
     return jsonify({"message" : f"Registered Faces: {num_classes}"})
     
+@app.route('/analyze_model', methods=['GET'])
+def analyze_model():
+    global label_encoder
+    data = np.load('models/features.npy')
+    labels = np.load('models/labels.npy')
+
+    # Perform PCA to reduce to 2 dimensions for visualization
+    pca = PCA(n_components=2)
+    transformed_data = pca.fit_transform(data)
+    
+    # Plot the data points and decision boundaries
+    plt.figure(figsize=(10, 8))
+    plt.autoscale()
+    plt.grid(True)
+    
+    random_color = generate_random_color()
+    name_index = 0
+    for i, label in enumerate(labels):
+        if label != label_encoder.inverse_transform([name_index])[0]:
+            random_color = generate_random_color()
+            plt.scatter(transformed_data[i, 0], transformed_data[i, 1], label=label_encoder.inverse_transform([name_index])[0], c=random_color)
+            name_index += 1
+        else:
+            plt.scatter(transformed_data[i, 0], transformed_data[i, 1], c=random_color)
+            
+    plt.legend()
+    plt.xlabel('PCA Component 1')
+    plt.ylabel('PCA Component 2')
+    plt.title('FaceLog SVM Model Visualization')
+    
+    # Save the plot to a BytesIO object
+    img = io.BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    plt.close()
+    
+    return send_file(img, mimetype='image/png')
+
+def generate_random_color():
+    r = random.randint(0, 200)
+    g = random.randint(0, 200)
+    b = random.randint(0, 200)
+    return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+
 # @app.route('/list_cameras', methods=['GET'])]
 # def get_cameras():
 #     cameras = list_cameras()
@@ -251,7 +295,7 @@ def recognize_faces(frame):
                     attendance.loc[existing_record.index, 'Probability'] = proba
 
             # If the person doesn't exist, append the new record
-            if proba > 0.8 and existing_record.empty:
+            if proba > 0.7 and existing_record.empty:
                 attendance_date = datetime.datetime.now().strftime("%m/%d/%Y")
                 attendance_time = datetime.datetime.now().strftime("%I:%M:%S %p")
                 attendance = attendance._append({'Name': person, 'Date': attendance_date, 'Time': attendance_time, 'Probability': proba}, ignore_index=True)
@@ -267,7 +311,7 @@ def recognize_faces(frame):
 def extract_features(image):
     if len(image.shape) == 2 or image.shape[2] == 1:
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-    image = cv2.resize(image, (80, 80))
+    image = cv2.resize(image, (160, 160))
     image = (image / 255.0 - 0.5) * 2.0
     image = torch.tensor(image, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0)
     with torch.no_grad():

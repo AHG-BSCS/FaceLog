@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startButton = document.getElementById('start');
     const registerButton = document.getElementById('register');
     const trainButton = document.getElementById('train');
+    const analyzeButton = document.getElementById('analyze');
     const video = document.getElementById('video');
     const flash = document.getElementById('flash');
     const imageCount = document.getElementById('imageCount');
@@ -87,6 +88,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
     });
+
+    analyzeButton.addEventListener('click', () => {
+        analyzeModel();
+    });
+
+    function analyzeModel() {
+        const analysis = document.getElementById('analysis');
+        video.src = '/analyze_model';
+    }
 
     function handleVideoLoad() {
         const userName = prompt("Enter Name:");
