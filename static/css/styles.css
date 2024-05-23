@@ -43,6 +43,7 @@ body {
 }
 
 .btn[disabled] {
+    background-color: maroon;
     opacity: 0.6;
     cursor: not-allowed; 
 }

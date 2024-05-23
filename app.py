@@ -22,17 +22,15 @@ camera_mode = None
 camera_index = 0
 
 # Load face recognition models
-svm_model = joblib.load('models/svm_model.pkl')
-label_encoder = joblib.load('models/label_encoder.pkl')
+svm_model = None
+label_encoder = None
 facenet_model = InceptionResnetV1(pretrained='vggface2').eval()
 
 # Create the attendance folder and file
-today = datetime.date.today().strftime('%m%d%Y')
-attendance_folder = os.path.join('attendance', today)
+attendance_folder = os.path.join('attendance', datetime.date.today().strftime('%m%d%Y'))
 last_save_attendance = time.time()
 
-if not os.path.exists('attendance'):
-    os.makedirs('attendance')
+os.makedirs('attendance', exist_ok=True)
 if not os.path.exists(f'{attendance_folder}.xlsx'):
     attendance = pd.DataFrame(columns=['Name', 'Time', 'Probability'])
 else:
@@ -42,6 +40,18 @@ else:
 def index():
     return render_template('index.html')
 
+@app.route('/load_models')
+def home():
+    global svm_model
+    global label_encoder
+    
+    if os.path.exists('models/svm_model.pkl'):
+        svm_model = joblib.load('models/svm_model.pkl')
+        label_encoder = joblib.load('models/label_encoder.pkl')
+    else:
+        return jsonify({"error": "Models Missing"}), 200
+    return jsonify({"message": "Models Loaded"}), 200
+
 @app.route('/face_recognition', methods=['GET'])
 def face_recognition():
     global camera
@@ -50,6 +60,9 @@ def face_recognition():
 
     # camera_index = int(request.args.get('cameraIndex'))
     # camera_index -= 1
+
+    if svm_model is None or label_encoder is None:
+        return jsonify({"error": "Models Missing"}), 200
     if camera is None:
         camera = VideoCamera()
         camera_mode = 'recognition'
@@ -97,7 +110,7 @@ def capture_images():
 
     user_name = request.json.get('user_name')
     if not user_name:
-        return jsonify({"error": "Username is required"}), 400
+        return jsonify({"error": "Username is required"}), 200
     
     user_folder = os.path.join('faces', user_name)
     os.makedirs(user_folder, exist_ok=True)
@@ -122,6 +135,9 @@ def training():
     faces_dir = 'faces'
     X = []
     y = []
+
+    if not os.path.exists(faces_dir):
+        return jsonify({"error": "No faces found"}), 400
 
     for person_name in os.listdir(faces_dir):
         person_dir = os.path.join(faces_dir, person_name)

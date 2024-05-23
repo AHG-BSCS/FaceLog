@@ -9,6 +9,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // cameraIndex = document.getElementById('cameraSelect').value;
     flashInterval = null;
 
+    fetch('/load_models')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                startButton.disabled = true;
+                analyzeButton.disabled = true;
+                alert(data.error);
+            }
+        });
     // fetch('/list_cameras')
     //     .then(response => response.json())
     //     .then(cameras => {
@@ -31,6 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
             video.src = null;
             fetch('/stop_feed');
         } else {
+            fetch('/load_models')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                });
             startButton.textContent = 'Stop Camera';
             // video.src = `/face_recognition?cameraIndex=${cameraIndex}`;
             video.src = "/face_recognition";
@@ -83,14 +100,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.error) {
                     alert(data.error);
                 } else {
-                    trainButton.disabled = false;
                     startButton.disabled = false;
-                    registerButton.disabled = false;
                     analyzeButton.disabled = false;
-                    trainButton.textContent = 'Update Model';
                     alert(data.message);
                 }
             });
+        trainButton.disabled = false;
+        registerButton.disabled = false;
+        trainButton.textContent = 'Update Model';
     });
 
     analyzeButton.addEventListener('click', () => {
@@ -98,6 +115,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function analyzeModel() {
+        fetch('/load_models')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+            });
         startButton.disabled = true;
         registerButton.disabled = true;
         trainButton.disabled = true;
@@ -149,15 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     imageCount.textContent = '';
                     video.src = null;
                     fetch('/stop_feed');
-                    fetch('/train_model')
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.error) {
-                                alert(data.error);
-                            } else {
-                                alert(data.message);
-                            }
-                        });
                     return;
                 }
             }, 800);
