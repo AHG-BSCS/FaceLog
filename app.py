@@ -242,6 +242,7 @@ class VideoCamera:
 
     def get_frame(self):
         frame = self.frame.copy()
+        frame = cv2.flip(frame, 1)
         current_time = time.time()
 
         # Perform face recognition every 0.1 seconds
