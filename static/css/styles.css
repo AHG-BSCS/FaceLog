@@ -42,6 +42,11 @@ body {
     background-color: #552da5;
 }
 
+.btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed; 
+}
+
 .video-container {
     position: relative;
     display: inline-block;
