@@ -30,7 +30,7 @@ body {
 .btn-custom {
     background-color: #6a3acb;
     color: #ffffff;
-    padding: 10px 20px;
+    padding: 10px 15px;
     border-radius: 6px;
     font-size: 1rem;
     font-weight: 500;
@@ -43,7 +43,7 @@ body {
 }
 
 .btn[disabled] {
-    background-color: maroon;
+    background-color: gray;
     opacity: 0.6;
     cursor: not-allowed; 
 }
@@ -83,4 +83,31 @@ body {
     color: white;
     padding: 5px;
     border-radius: 5px;
+}
+
+.attendance-table {
+    visibility: collapse;
+    position: relative;
+    display: inline-block;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+tr:hover {
+    background-color: #ddd;
+}
+
+th {
+    padding: 8px;
+    text-align: left;
+    background-color: #6a3acb;
+    color: white;
+}
+
+td {
+    border: 2px solid #ddd;
+    text-align: left;
+    padding: 8px;
 }

@@ -226,7 +226,6 @@ def analyze_model():
     img = io.BytesIO()
     plt.savefig(img, format='png')
     img.seek(0)
-    plt.close()
     
     return send_file(img, mimetype='image/png')
 
@@ -235,6 +234,16 @@ def generate_random_color():
     g = random.randint(0, 200)
     b = random.randint(0, 200)
     return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+
+@app.route('/read_attendance', methods=['GET'])
+def read_excel():
+    global attendance_folder
+    if not os.path.exists(f'{attendance_folder}.xlsx'):
+        return jsonify({"error": "No attendance found"}), 200
+    
+    df = pd.read_excel(f'{attendance_folder}.xlsx')
+    data = df.to_dict(orient='records')
+    return jsonify(data)
 
 # @app.route('/list_cameras', methods=['GET'])]
 # def get_cameras():

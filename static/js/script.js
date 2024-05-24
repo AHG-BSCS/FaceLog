@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerButton = document.getElementById('register');
     const trainButton = document.getElementById('train');
     const analyzeButton = document.getElementById('analyze');
+    const viewButton = document.getElementById('view');
     const video = document.getElementById('video');
     const flash = document.getElementById('flash');
     const imageCount = document.getElementById('imageCount');
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startButton.disabled = true;
         if (startButton.textContent === 'Stop Camera') {
             startButton.textContent = 'Start Camera';
+            startButton.style.backgroundColor = '#6a3acb';
             registerButton.disabled = false;
             trainButton.disabled = false;
             analyzeButton.disabled = false;
@@ -49,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             startButton.textContent = 'Stop Camera';
+            startButton.style.backgroundColor = 'maroon';
             // video.src = `/face_recognition?cameraIndex=${cameraIndex}`;
             video.src = "/face_recognition";
             registerButton.disabled  = true;
@@ -66,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (registerButton.textContent === 'Stop Capturing') {
             clearInterval(flashInterval);
             registerButton.textContent = 'Register Now';
+            registerButton.backgroundColor = '#6a3acb';
             imageCount.textContent = '';
             video.src = null;
             startButton.disabled = false;
@@ -75,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
             video.removeEventListener('load', handleVideoLoad);
         } else {
             registerButton.textContent = 'Stop Capturing';
+            registerButton.style.backgroundColor = 'maroon';
             // video.src = `/face_capturing?cameraIndex=${cameraIndex}`;
             video.src = "/face_capturing";
             startButton.disabled = true;
@@ -111,10 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     analyzeButton.addEventListener('click', () => {
-        analyzeModel();
-    });
-
-    function analyzeModel() {
         fetch('/load_models')
             .then(response => response.json())
             .then(data => {
@@ -130,7 +131,44 @@ document.addEventListener('DOMContentLoaded', () => {
         analyzeButton.textContent = 'Analyzing...';
         video.src = '/analyze_model';
         video.addEventListener('load', handleVisualizerLoad);
-    }
+    });
+
+    viewButton.addEventListener('click', () => {
+        const tableBody = document.getElementById('logTable').getElementsByTagName('tbody')[0];
+        const table = document.getElementById('attendance-table')
+        if (viewButton.textContent === 'View Attendance') {
+            fetch('/read_attendance')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    else {
+                        table.style.visibility = 'visible';
+                        viewButton.textContent = 'Hide Attendance';
+                        viewButton.style.backgroundColor = 'maroon';
+                        tableBody.innerHTML = '';  // Clear any existing rows
+                        i = 1;
+                        data.forEach(row => {
+                            const newRow = tableBody.insertRow();
+                            newRow.insertCell(0).textContent = i;
+                            newRow.insertCell(1).textContent = row.Name;
+                            newRow.insertCell(2).textContent = row.Time;
+                            newRow.insertCell(3).textContent = row.Probability
+                            i++;
+                        });
+                    }
+                })
+                .catch(error => alert(error));
+        }
+        else {
+            table.style.visibility = 'collapse';
+            viewButton.textContent = 'View Attendance';
+            viewButton.style.backgroundColor = '#6a3acb';
+            tableBody.innerHTML = '';  // Clear any existing rows
+        }
+    });
 
     function handleVideoLoad() {
         video.removeEventListener('load', handleVideoLoad);
