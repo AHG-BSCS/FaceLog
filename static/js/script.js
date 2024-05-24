@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerButton = document.getElementById('register');
     const trainButton = document.getElementById('train');
     const analyzeButton = document.getElementById('analyze');
-    const viewButton = document.getElementById('view');
+    const attendanceButton = document.getElementById('attendance');
     const video = document.getElementById('video');
     const flash = document.getElementById('flash');
     const imageCount = document.getElementById('imageCount');
@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(data.error);
             }
         });
+        
     // fetch('/list_cameras')
     //     .then(response => response.json())
     //     .then(cameras => {
@@ -33,9 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     startButton.addEventListener('click', () => {
         startButton.disabled = true;
-        if (startButton.textContent === 'Stop Camera') {
-            startButton.textContent = 'Start Camera';
+        if (startButton.style.backgroundColor === 'maroon') {
             startButton.style.backgroundColor = '#6a3acb';
+            startButton.style.backgroundImage = "url('static/image/recognize-start.png')";
+            // startButton.src = '../image/recognize-start.png';
             registerButton.disabled = false;
             trainButton.disabled = false;
             analyzeButton.disabled = false;
@@ -50,8 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
                 });
-            startButton.textContent = 'Stop Camera';
             startButton.style.backgroundColor = 'maroon';
+            startButton.style.backgroundImage = "url('static/image/recognize-stop.png')";
             // video.src = `/face_recognition?cameraIndex=${cameraIndex}`;
             video.src = "/face_recognition";
             registerButton.disabled  = true;
@@ -66,9 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     registerButton.addEventListener('click', () => {
         registerButton.disabled = true;
-        if (registerButton.textContent === 'Stop Capturing') {
+        if (registerButton.style.backgroundColor === 'maroon') {
             clearInterval(flashInterval);
-            registerButton.textContent = 'Register Now';
+            registerButton.style.backgroundImage = "url('static/image/register.png')";
             registerButton.backgroundColor = '#6a3acb';
             imageCount.textContent = '';
             video.src = null;
@@ -78,8 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
             fetch('/stop_feed');
             video.removeEventListener('load', handleVideoLoad);
         } else {
-            registerButton.textContent = 'Stop Capturing';
             registerButton.style.backgroundColor = 'maroon';
+            registerButton.style.backgroundImage = "url('static/image/stop.png')";
             // video.src = `/face_capturing?cameraIndex=${cameraIndex}`;
             video.src = "/face_capturing";
             startButton.disabled = true;
@@ -98,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startButton.disabled = true;
         registerButton.disabled = true;
         analyzeButton.disabled = true;
-        trainButton.textContent = 'Training...';
+        trainButton.style.backgroundImage = "url('static/image/training.png')";
         fetch('/training')
             .then(response => response.json())
             .then(data => {
@@ -112,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         trainButton.disabled = false;
         registerButton.disabled = false;
-        trainButton.textContent = 'Update Model';
+        trainButton.style.backgroundImage = "url('static/image/train.png')";
     });
 
     analyzeButton.addEventListener('click', () => {
@@ -128,45 +130,46 @@ document.addEventListener('DOMContentLoaded', () => {
         registerButton.disabled = true;
         trainButton.disabled = true;
         analyzeButton.disabled = true;
-        analyzeButton.textContent = 'Analyzing...';
+        analyzeButton.style.backgroundImage = "url('static/image/training.png')";
         video.src = '/analyze_model';
         video.addEventListener('load', handleVisualizerLoad);
     });
 
-    viewButton.addEventListener('click', () => {
+    attendanceButton.addEventListener('click', () => {
         const tableBody = document.getElementById('logTable').getElementsByTagName('tbody')[0];
         const table = document.getElementById('attendance-table')
-        if (viewButton.textContent === 'View Attendance') {
-            fetch('/read_attendance')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-                    else {
-                        table.style.visibility = 'visible';
-                        viewButton.textContent = 'Hide Attendance';
-                        viewButton.style.backgroundColor = 'maroon';
-                        tableBody.innerHTML = '';  // Clear any existing rows
-                        i = 1;
-                        data.forEach(row => {
-                            const newRow = tableBody.insertRow();
-                            newRow.insertCell(0).textContent = i;
-                            newRow.insertCell(1).textContent = row.Name;
-                            newRow.insertCell(2).textContent = row.Time;
-                            newRow.insertCell(3).textContent = row.Probability
-                            i++;
-                        });
-                    }
-                })
-                .catch(error => alert(error));
+        
+        if (attendanceButton.style.backgroundColor === 'maroon') {
+            table.style.visibility = 'collapse';
+            attendanceButton.style.backgroundImage = "url('static/image/attendance-view.png')";
+            attendanceButton.style.backgroundColor = '#6a3acb';
+            tableBody.innerHTML = '';  // Clear any existing rows
         }
         else {
-            table.style.visibility = 'collapse';
-            viewButton.textContent = 'View Attendance';
-            viewButton.style.backgroundColor = '#6a3acb';
-            tableBody.innerHTML = '';  // Clear any existing rows
+            fetch('/read_attendance')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                alert(data.error);
+                return;
+                }
+                else {
+                table.style.visibility = 'visible';
+                attendanceButton.style.backgroundImage = "url('static/image/attendance-close.png')";
+                attendanceButton.style.backgroundColor = 'maroon';
+                tableBody.innerHTML = '';  // Clear any existing rows
+                i = 1;
+                data.forEach(row => {
+                    const newRow = tableBody.insertRow();
+                    newRow.insertCell(0).textContent = i;
+                    newRow.insertCell(1).textContent = row.Name;
+                    newRow.insertCell(2).textContent = row.Time;
+                    newRow.insertCell(3).textContent = row.Probability
+                    i++;
+                });
+                }
+            })
+            .catch(error => alert(error));
         }
     });
 
@@ -175,7 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const userName = prompt("Enter Name:");
         if (!userName) {
             alert("User name is required.");
-            registerButton.textContent = 'Register Now';
+            registerButton.style.backgroundColor = '#6a3acb';
+            registerButton.style.backgroundImage = "url('static/image/register.png')";
+            startButton.disabled = false;
+            trainButton.disabled = false;
+            analyzeButton.disabled = false;
             video.src = null;
             fetch('/stop_feed');
             return;
@@ -208,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 imageCount.textContent = `${count}/50`;
                 if (count > 50) {
                     clearInterval(flashInterval);
-                    registerButton.textContent = 'Register Now';
+                    registerButton.style.backgroundImage = "url('static/image/register.png')";
                     imageCount.textContent = '';
                     video.src = null;
                     fetch('/stop_feed');
@@ -224,6 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
         registerButton.disabled = false;
         trainButton.disabled = false;
         analyzeButton.disabled = false;
-        analyzeButton.textContent = 'Analyze Model';
+        analyzeButton.style.backgroundImage = "url('static/image/analyze.png')";
     }
 });

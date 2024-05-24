@@ -27,25 +27,47 @@ body {
     margin-bottom: 30px;
 }
 
-.btn-custom {
+button {
     background-color: #6a3acb;
-    color: #ffffff;
-    padding: 10px 15px;
     border-radius: 6px;
-    font-size: 1rem;
-    font-weight: 500;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 60px;
+    height: 60px;
+    background-size: 50px 50px;
+    margin-inline: 8px;
     transition: background-color 0.3s ease;
-    border: none;
 }
 
-.btn-custom:hover {
+button:hover {
     background-color: #552da5;
 }
 
-.btn[disabled] {
+button[disabled] {
     background-color: gray;
     opacity: 0.6;
     cursor: not-allowed; 
+}
+
+#start {
+    background-image: url('../image/recognize-start.png');
+}
+
+#register {
+    background-image: url('../image/register.png');
+}
+
+#train {
+    background-image: url('../image/train.png');
+}
+
+#analyze {
+    background-image: url('../image/analyze.png');
+}
+
+#attendance {
+    background-image: url('../image/attendance-view.png');
 }
 
 .video-container {
@@ -85,7 +107,7 @@ body {
     border-radius: 5px;
 }
 
-.attendance-table {
+#attendance-table {
     visibility: collapse;
     position: relative;
     display: inline-block;

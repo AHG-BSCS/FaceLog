@@ -235,7 +235,7 @@ def generate_random_color():
     b = random.randint(0, 200)
     return '#{:02x}{:02x}{:02x}'.format(r, g, b)
 
-@app.route('/read_attendance', methods=['GET'])
+@app.route('/read_attendance')
 def read_excel():
     global attendance_folder
     if not os.path.exists(f'{attendance_folder}.xlsx'):
