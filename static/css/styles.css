@@ -27,6 +27,11 @@ body {
     margin-bottom: 30px;
 }
 
+.card-attendance {
+    font-size: 1.25rem;
+    color: #6c757d;
+}
+
 button {
     background-color: #6a3acb;
     border-radius: 6px;

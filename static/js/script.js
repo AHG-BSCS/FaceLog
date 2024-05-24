@@ -7,6 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const video = document.getElementById('video');
     const flash = document.getElementById('flash');
     const imageCount = document.getElementById('imageCount');
+
+    // for attendance values
+    const currentDate = new Date();
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const month = monthNames[currentDate.getMonth()];
+    const day = String(currentDate.getDate());
+    const year = String(currentDate.getFullYear());
+    const formattedDate = `${month} ${day} ${year}`;
+
+    document.querySelector('.card-attendance').textContent = `Attendance for ${formattedDate}`;
     // cameraIndex = document.getElementById('cameraSelect').value;
     flashInterval = null;
 
@@ -159,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 attendanceButton.style.backgroundColor = 'maroon';
                 tableBody.innerHTML = '';  // Clear any existing rows
                 i = 1;
+                
                 data.forEach(row => {
                     const newRow = tableBody.insertRow();
                     newRow.insertCell(0).textContent = i;
