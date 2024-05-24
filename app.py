@@ -8,7 +8,7 @@ import torch
 import joblib
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 from threading import Thread
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
@@ -28,14 +28,14 @@ label_encoder = None
 facenet_model = InceptionResnetV1(pretrained='vggface2').eval()
 
 # Create the attendance folder and file
-attendance_folder = os.path.join('attendance', datetime.date.today().strftime('%m%d%Y'))
+ATTENDANCE_FOLDER = os.path.join('attendance', datetime.date.today().strftime('%m%d%Y'))
 last_save_attendance = time.time()
 
 os.makedirs('attendance', exist_ok=True)
-if not os.path.exists(f'{attendance_folder}.xlsx'):
+if not os.path.exists(f'{ATTENDANCE_FOLDER}.xlsx'):
     attendance = pd.DataFrame(columns=['Name', 'Time', 'Probability'])
 else:
-    attendance = pd.read_excel(f'{attendance_folder}.xlsx')
+    attendance = pd.read_excel(f'{ATTENDANCE_FOLDER}.xlsx')
 
 def generate_key():
     key = Fernet.generate_key()
@@ -51,11 +51,9 @@ def load_key():
     else:
         return open('passkey/secret.key', 'rb').read()
     
-# Load the key
+# Prepare the key and password
 key = load_key()
 cipher_suite = Fernet(key)
-
-# File to store the encrypted password
 PASSWORD_FILE = 'passkey/encrypt.lock'
 
 # Initialize with a default password if the file doesn't exist
@@ -69,7 +67,7 @@ def index():
     return render_template('index.html')
 
 @app.route('/load_models')
-def home():
+def load_models():
     global svm_model
     global label_encoder
     
@@ -77,7 +75,7 @@ def home():
         svm_model = joblib.load('models/svm_model.pkl')
         label_encoder = joblib.load('models/label_encoder.pkl')
     else:
-        return jsonify({"error": "Models Missing"}), 200
+        return jsonify({"error": "Models Missing"}), 401
     return jsonify({"message": "Models Loaded"}), 200
 
 @app.route('/face_recognition', methods=['GET'])
@@ -90,7 +88,7 @@ def face_recognition():
     # camera_index -= 1
 
     if svm_model is None or label_encoder is None:
-        return jsonify({"error": "Models Missing"}), 200
+        return jsonify({"error": "Models Missing"}), 401
     if camera is None:
         camera = VideoCamera()
         camera_mode = 'recognition'
@@ -128,7 +126,7 @@ def stop_feed():
 
     if not attendance.empty:
         attendance = attendance.sort_values(by='Name')
-        attendance.to_excel(f'{attendance_folder}.xlsx', index=False)
+        attendance.to_excel(f'{ATTENDANCE_FOLDER}.xlsx', index=False)
     return 'Webcam stopped'
 
 @app.route('/capture_images', methods=['POST'])
@@ -138,7 +136,7 @@ def capture_images():
 
     user_name = request.json.get('user_name')
     if not user_name:
-        return jsonify({"error": "Username is required"}), 200
+        return jsonify({"error": "Username is required"}), 401
     
     user_folder = os.path.join('faces', user_name)
     os.makedirs(user_folder, exist_ok=True)
@@ -165,7 +163,7 @@ def training():
     y = []
 
     if not os.path.exists(faces_dir):
-        return jsonify({"error": "No faces found"}), 400
+        return jsonify({"error": "No faces found"}), 401
 
     for person_name in os.listdir(faces_dir):
         person_dir = os.path.join(faces_dir, person_name)
@@ -264,12 +262,12 @@ def generate_random_color():
     return '#{:02x}{:02x}{:02x}'.format(r, g, b)
 
 @app.route('/read_attendance')
-def read_excel():
-    global attendance_folder
-    if not os.path.exists(f'{attendance_folder}.xlsx'):
-        return jsonify({"error": "No attendance found"}), 200
+def read_attendance_today():
+    global ATTENDANCE_FOLDER
+    if not os.path.exists(f'{ATTENDANCE_FOLDER}.xlsx'):
+        return jsonify({"error": "No attendance for today"}), 401
     
-    df = pd.read_excel(f'{attendance_folder}.xlsx')
+    df = pd.read_excel(f'{ATTENDANCE_FOLDER}.xlsx')
     data = df.to_dict(orient='records')
     return jsonify(data)
 
@@ -363,7 +361,7 @@ class VideoCamera:
 
 def recognize_faces(frame):
     global attendance
-    global attendance_folder
+    global ATTENDANCE_FOLDER
     global last_save_attendance
     current_time = time.time()
 
@@ -404,7 +402,7 @@ def recognize_faces(frame):
     if current_time - last_save_attendance >= 10:
         if not attendance.empty:
             attendance = attendance.sort_values(by='Name')
-            attendance.to_excel(f'{attendance_folder}.xlsx', index=False)
+            attendance.to_excel(f'{ATTENDANCE_FOLDER}.xlsx', index=False)
             last_save_attendance = current_time
     return frame
 
@@ -468,4 +466,4 @@ def write_password(encrypted_password):
 #             print("Invalid Input!")
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=5000,debug=True)
+    app.run(host='0.0.0.0',port=5000,debug=False)

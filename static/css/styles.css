@@ -24,30 +24,14 @@ body {
 .card-subtitle {
     font-size: 1.25rem;
     color: #6c757d;
-    margin-bottom: 30px;
-}
-
-.attendance-dates {
-    display: flex;
-}
-
-.card-attendance {
-    text-align: left;
-    font-weight: bold;
-    font-size: 1rem;
-    color: #6c757d;
-    margin-bottom: 10px;
-}
-
-#dateSelect {
-    margin-left: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 25px;
 }
 
 button {
     background-color: #6a3acb;
-    border-radius: 6px;
-    background-size: contain;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
     width: 60px;
@@ -102,7 +86,7 @@ button[disabled] {
     background-image: url('../image/face_recognition_placeholder.jpg');
     background-size: cover;
     display: block;
-    border-radius: 8px;
+    border-radius: 10px;
     border: 2px solid #ddd;
 }
 
@@ -122,7 +106,7 @@ button[disabled] {
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.40);
     color: white;
     padding: 5px;
     border-radius: 5px;
@@ -134,12 +118,33 @@ button[disabled] {
     display: inline-block;
 }
 
+.attendance-dates {
+    display: flex;
+}
+
+label, select, optgroup, option {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #444444;
+    margin-right: 6px;
+    margin-bottom: 10px;
+}
+
+select {
+    border-style: none;
+    margin-bottom: 7px;
+}
+
+option {
+    font-weight: normal;
+}
+
 tr:nth-child(even) {
-    background-color: #f2f2f2;
+    background-color: #dddddd;
 }
 
 tr:hover {
-    background-color: #ddd;
+    background-color: #bebebe;
 }
 
 th {
@@ -150,7 +155,6 @@ th {
 }
 
 td {
-    border: 2px solid #ddd;
     text-align: left;
     padding: 8px;
 }
