@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const month = monthNames[currentDate.getMonth()];
     const day = String(currentDate.getDate());
     const year = String(currentDate.getFullYear());
-    const formattedDate = `${month} ${day} ${year}`;
+    const formattedDate = `${month} ${day}, ${year}`;
 
     document.querySelector('.card-attendance').textContent = `Attendance for ${formattedDate}`;
     // cameraIndex = document.getElementById('cameraSelect').value;

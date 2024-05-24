@@ -32,14 +32,19 @@
             </select> -->
         </div>
         <div id="attendance-table">
+            <div class="attendance-dates">
+                <div class="card-attendance">Attendance for </div>
+                <select id="dateSelect">
+                    <optgroup label="Available Dates" id="dateGroup"></optgroup>
+                </select>
+            </div>
             <table id="logTable">
                 <thead>
-                    <div class="card-attendance">Attendance for </div>
                   <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Time</th>
-                    <th scope="col">Probability</th>
+                    <th class="no" scope="col">#</th>
+                    <th class="name" scope="col">Name</th>
+                    <th class="time" scope="col">Time</th>
+                    <th class="probability" scope="col">Probability</th>
                   </tr>
                 </thead>
                 <tbody>

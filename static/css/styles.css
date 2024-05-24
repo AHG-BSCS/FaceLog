@@ -27,9 +27,21 @@ body {
     margin-bottom: 30px;
 }
 
+.attendance-dates {
+    display: flex;
+}
+
 .card-attendance {
-    font-size: 1.25rem;
+    text-align: left;
+    font-weight: bold;
+    font-size: 1rem;
     color: #6c757d;
+    margin-bottom: 10px;
+}
+
+#dateSelect {
+    margin-left: 10px;
+    margin-bottom: 10px;
 }
 
 button {
@@ -137,4 +149,16 @@ td {
     border: 2px solid #ddd;
     text-align: left;
     padding: 8px;
+}
+
+.no {
+    padding-right: 20px;
+}
+
+.name {
+    padding-right: 300px;
+}
+
+.time {
+    padding-right: 100px;
 }
