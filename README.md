@@ -1,4 +1,4 @@
-![image](https://github.com/Mindkerchief/FaceLog/assets/110330524/22fa61a6-cf72-4240-873f-d37df15a62e9)# **FaceLog**
+# **FaceLog**
 ## A Real-time Face Recognition Attendance System
 
 # Pre - requisites
