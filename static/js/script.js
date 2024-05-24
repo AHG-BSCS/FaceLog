@@ -8,8 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const video = document.getElementById('video');
     const flash = document.getElementById('flash');
     const imageCount = document.getElementById('imageCount');
+    const cameraSelect = document.getElementById('cameraList');
     const fileSelect = document.getElementById('fileSelect');
-    // cameraIndex = document.getElementById('cameraSelect').value;
     flashInterval = null;
 
     // Load models on page load to disable unessesary  buttons
@@ -35,17 +35,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // fetch('/list_cameras')
-    //     .then(response => response.json())
-    //     .then(cameras => {
-    //         const cameraGroup = document.getElementById('cameraGroup');
-    //         cameras.forEach((camera, index) => {
-    //             const option = document.createElement('option');
-    //             option.value = camera;
-    //             option.textContent = `Camera ${index + 1}`;
-    //             cameraGroup.appendChild(option);
-    //         });
-    //     });
+    fetch('/list_cameras')
+        .then(response => response.json())
+        .then(cameras => {
+            cameras.forEach((camera, index) => {
+                const option = document.createElement('option');
+                option.value = camera;
+                option.textContent = index;
+                cameraSelect.appendChild(option);
+            });
+        });
 
     startButton.addEventListener('click', () => {
         startButton.disabled = true;
@@ -53,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Stop facial recognition
             startButton.style.backgroundColor = '#6a3acb';
             startButton.style.backgroundImage = "url('static/image/recognize-start.png')";
-            // startButton.src = '../image/recognize-start.png';
             registerButton.disabled = false;
             trainButton.disabled = false;
             analyzeButton.disabled = false;
@@ -71,13 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Start facial recognition
             startButton.style.backgroundColor = 'maroon';
             startButton.style.backgroundImage = "url('static/image/recognize-stop.png')";
-            // video.src = `/face_recognition?cameraIndex=${cameraIndex}`;
             video.src = "/face_recognition";
             registerButton.disabled  = true;
             trainButton.disabled = true;
             analyzeButton.disabled = true;
         }
-        timeout();
+        timeout(startButton);
     });
 
     registerButton.addEventListener('click', () => {
@@ -96,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             registerButton.style.backgroundColor = 'maroon';
             registerButton.style.backgroundImage = "url('static/image/stop.png')";
-            // video.src = `/face_capturing?cameraIndex=${cameraIndex}`;
             video.src = "/face_capturing";
             startButton.disabled = true;
             trainButton.disabled = true;
@@ -104,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Wait for video to load before capturing images
             video.addEventListener('load', handleVideoLoad);
         }
-        timeout();
+        timeout(registerButton);
     });
 
     trainButton.addEventListener('click', () => {
@@ -202,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 table.style.visibility = 'visible';
                                 attendanceButton.style.backgroundImage = "url('static/image/attendance-close.png')";
                                 attendanceButton.style.backgroundColor = 'maroon';
+                                fileSelect.value = fileSelect.options[fileSelect.options.length - 1].value;
                                 tableBody.innerHTML = '';  // Clear any existing rows
 
                                 data.forEach((row, index) => {
@@ -220,12 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         }
-    });
-
-    fileSelect.addEventListener('change', () => {
-        const selectedFile = fileSelect.value;
-        if (selectedFile)
-            selectAttendance(selectedFile);
     });
 
     passwordButton.addEventListener('click', () => {
@@ -250,10 +241,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function timeout() {
+    fileSelect.addEventListener('change', () => {
+        const selectedFile = fileSelect.value;
+        if (selectedFile)
+            selectAttendance(selectedFile);
+    });
+
+    cameraSelect.addEventListener('change', () => {
+        const selectedCamera = cameraSelect.value;
+        if (selectedCamera)
+            fetch(`/change_camera/${selectedCamera}`)
+    });
+
+    function timeout(button) {
         // Enable button after 3 seconds to prevent spamming
         setTimeout(() => {
-            registerButton.disabled = false;
+            button.disabled = false;
         }, 3000);
     }
 

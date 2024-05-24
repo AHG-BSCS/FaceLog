@@ -92,7 +92,7 @@ def face_recognition():
     if camera is None:
         camera = VideoCamera()
         camera_mode = 'recognition'
-    return Response(gen(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(generate_frame(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/face_capturing', methods=['GET'])
 def face_capturing():
@@ -105,13 +105,7 @@ def face_capturing():
     if camera is None:
         camera = VideoCamera()
         camera_mode = 'capture'
-    return Response(gen(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-def gen(camera):
-    while camera.running:
-        frame = camera.get_frame()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+    return Response(generate_frame(camera), mimetype='multipart/x-mixed-replace; boundary=frame')
         
 @app.route('/stop_feed')
 def stop_feed():
@@ -255,12 +249,6 @@ def analyze_model():
     
     return send_file(img, mimetype='image/png')
 
-def generate_random_color():
-    r = random.randint(0, 200)
-    g = random.randint(0, 200)
-    b = random.randint(0, 200)
-    return '#{:02x}{:02x}{:02x}'.format(r, g, b)
-
 @app.route('/read_attendance')
 def read_attendance_today():
     global ATTENDANCE_FOLDER
@@ -315,13 +303,19 @@ def update_password():
     else:
         return jsonify({'status': 'failure'}), 401
 
-# @app.route('/list_cameras', methods=['GET'])]
-# def get_cameras():
-#     cameras = list_cameras()
-#     return jsonify(cameras)
+@app.route('/list_cameras', methods=['GET'])
+def get_cameras():
+    cameras = list_cameras()
+    return jsonify(cameras)
 
-# Threading for video capture and processing
+@app.route('/change_camera/<cameraIndex>', methods=['GET'])
+def change_camera(selectedCamera):
+    global camera_index
+    camera_index = selectedCamera
+    return jsonify({"message": "Camera change."}), 200
+
 class VideoCamera:
+    # Threading for video capture and processing
     global attendance
     global camera_index
 
@@ -359,6 +353,25 @@ class VideoCamera:
         self.running = False
         self.video.release()
 
+def list_cameras():
+    index = 0
+    arr = []
+    while True:
+        cap = cv2.VideoCapture(index)
+        if not cap.read()[0]:
+            break
+        else:
+            arr.append(index)
+        cap.release()
+        index += 1
+    return arr
+
+def generate_frame(camera):
+    while camera.running:
+        frame = camera.get_frame()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+        
 def recognize_faces(frame):
     global attendance
     global ATTENDANCE_FOLDER
@@ -416,6 +429,12 @@ def extract_features(image):
         features = facenet_model(image).cpu().numpy().flatten()
     return features
 
+def generate_random_color():
+    r = random.randint(0, 200)
+    g = random.randint(0, 200)
+    b = random.randint(0, 200)
+    return '#{:02x}{:02x}{:02x}'.format(r, g, b)
+
 def read_password():
     with open(PASSWORD_FILE, 'rb') as file:
         return file.read()
@@ -423,47 +442,6 @@ def read_password():
 def write_password(encrypted_password):
     with open(PASSWORD_FILE, 'wb') as file:
         file.write(encrypted_password)
-
-# def list_cameras():
-#     index = 0
-#     arr = []
-#     while True:
-#         cap = cv2.VideoCapture(index)
-#         if not cap.read()[0]:
-#             break
-#         else:
-#             arr.append(index)
-#         cap.release()
-#         index += 1
-#     return arr
-
-# def select_camera():
-#     num_cameras = 0
-#     camera_info = []
-#     for i in range(10):  
-#         cap = cv2.VideoCapture(i)
-#         if cap.isOpened():
-#             num_cameras += 1
-#             camera_name = cap.get(cv2.CAP_PROP_POS_MSEC)
-#             camera_info.append((i, camera_name))
-#             cap.release()
-#         else:
-#             break
-
-#     print("Cameras:")
-#     for camera_id, camera_name in camera_info:
-#         print(f"[{camera_id}] {camera_name}")
-
-#     while True:
-#         camera_id = input("Camera #: ")
-#         try:
-#             camera_id = int(camera_id)
-#             if 0 <= camera_id < num_cameras:
-#                 return camera_id
-#             else:
-#                 print("Invalid Camera!")
-#         except ValueError:
-#             print("Invalid Input!")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=5000,debug=False)

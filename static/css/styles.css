@@ -75,6 +75,12 @@ button[disabled] {
     background-image: url('../image/password.png');
 }
 
+.camera-container {
+    position: absolute;
+    margin-left: 131px;
+    margin-bottom: 5px;
+}
+
 .video-container {
     position: relative;
     display: inline-block;
