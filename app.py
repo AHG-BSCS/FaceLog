@@ -245,6 +245,23 @@ def read_excel():
     data = df.to_dict(orient='records')
     return jsonify(data)
 
+@app.route('/list_attendance_files', methods=['GET'])
+def list_attendance_files():
+    attendance_files = [f for f in os.listdir('attendance') if f.endswith('.xlsx')]
+    return jsonify(attendance_files)
+
+@app.route('/read_attendance/<filename>', methods=['GET'])
+def read_attendance(filename):
+    attendance_file_path = os.path.join('attendance', filename)
+    if not os.path.exists(attendance_file_path):
+        return jsonify({"error": "File not found"}), 404
+
+    df = pd.read_excel(attendance_file_path)
+    data = df.to_dict(orient='records')
+    return jsonify(data)
+
+
+
 # @app.route('/list_cameras', methods=['GET'])]
 # def get_cameras():
 #     cameras = list_cameras()

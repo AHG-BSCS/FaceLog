@@ -7,16 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const video = document.getElementById('video');
     const flash = document.getElementById('flash');
     const imageCount = document.getElementById('imageCount');
-
-    // for attendance values
-    const currentDate = new Date();
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const month = monthNames[currentDate.getMonth()];
-    const day = String(currentDate.getDate());
-    const year = String(currentDate.getFullYear());
-    const formattedDate = `${month} ${day}, ${year}`;
-
-    document.querySelector('.card-attendance').textContent = `Attendance for ${formattedDate}`;
+    const fileSelect = document.getElementById('fileSelect');
+    
     // cameraIndex = document.getElementById('cameraSelect').value;
     flashInterval = null;
 
@@ -244,4 +236,41 @@ document.addEventListener('DOMContentLoaded', () => {
         analyzeButton.disabled = false;
         analyzeButton.style.backgroundImage = "url('static/image/analyze.png')";
     }
+
+    fetch('/list_attendance_files')
+        .then(response => response.json())
+        .then(files => {
+            files.forEach(file => {
+                const option = document.createElement('option');
+                option.value = file;
+                option.textContent = file;
+                fileSelect.appendChild(option);
+            });
+        });
+
+        fileSelect.addEventListener('change', () => {
+            const selectedFile = fileSelect.value;
+            if (selectedFile) {
+                fetch(`/read_attendance/${selectedFile}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const tableBody = document.getElementById('logTable').getElementsByTagName('tbody')[0];
+                        tableBody.innerHTML = '';  // Clear any existing rows
+    
+                        if (data.error) {
+                            alert(data.error);
+                        } else {
+                            data.forEach((row, index) => {
+                                const newRow = tableBody.insertRow();
+                                newRow.insertCell(0).textContent = index + 1;
+                                newRow.insertCell(1).textContent = row.Name;
+                                newRow.insertCell(2).textContent = row.Time;
+                                newRow.insertCell(3).textContent = row.Probability;
+                            });
+                        }
+                    })
+                    .catch(error => alert(error));
+            }
+        });
+    
 });
