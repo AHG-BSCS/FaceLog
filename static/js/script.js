@@ -4,11 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const trainButton = document.getElementById('train');
     const analyzeButton = document.getElementById('analyze');
     const attendanceButton = document.getElementById('attendance');
+    const passwordButton = document.getElementById('password');
     const video = document.getElementById('video');
     const flash = document.getElementById('flash');
     const imageCount = document.getElementById('imageCount');
     const fileSelect = document.getElementById('fileSelect');
-    
     // cameraIndex = document.getElementById('cameraSelect').value;
     flashInterval = null;
 
@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
+    
     // fetch('/list_cameras')
     //     .then(response => response.json())
     //     .then(cameras => {
@@ -72,8 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
         registerButton.disabled = true;
         if (registerButton.style.backgroundColor === 'maroon') {
             clearInterval(flashInterval);
+            registerButton.style.backgroundColor = '#6a3acb';
             registerButton.style.backgroundImage = "url('static/image/register.png')";
-            registerButton.backgroundColor = '#6a3acb';
             imageCount.textContent = '';
             video.src = null;
             startButton.disabled = false;
@@ -98,49 +99,67 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     trainButton.addEventListener('click', () => {
-        trainButton.disabled = true;
-        startButton.disabled = true;
-        registerButton.disabled = true;
-        analyzeButton.disabled = true;
-        trainButton.style.backgroundImage = "url('static/image/training.png')";
-        fetch('/training')
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
+        const password = prompt("Enter password:");
+        if (password) {
+            verifyPassword(password).then(isVerified => {
+                if (isVerified) {
+                    trainButton.disabled = true;
+                    startButton.disabled = true;
+                    registerButton.disabled = true;
+                    analyzeButton.disabled = true;
+                    trainButton.style.backgroundImage = "url('static/image/training.png')";
+                    fetch('/training')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert(data.error);
+                            } else {
+                                startButton.disabled = false;
+                                analyzeButton.disabled = false;
+                                alert(data.message);
+                            }
+                        });
+                    trainButton.disabled = false;
+                    registerButton.disabled = false;
+                    trainButton.style.backgroundImage = "url('static/image/train.png')";
                 } else {
-                    startButton.disabled = false;
-                    analyzeButton.disabled = false;
-                    alert(data.message);
+                    alert("Incorrect password!");
                 }
             });
-        trainButton.disabled = false;
-        registerButton.disabled = false;
-        trainButton.style.backgroundImage = "url('static/image/train.png')";
+        }
     });
 
     analyzeButton.addEventListener('click', () => {
-        fetch('/load_models')
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                    return;
+        const password = prompt("Enter password:");
+        if (password) {
+            verifyPassword(password).then(isVerified => {
+                if (isVerified) {
+                    fetch('/load_models')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert(data.error);
+                                return;
+                            }
+                        });
+                    startButton.disabled = true;
+                    registerButton.disabled = true;
+                    trainButton.disabled = true;
+                    analyzeButton.disabled = true;
+                    analyzeButton.style.backgroundImage = "url('static/image/training.png')";
+                    video.src = '/analyze_model';
+                    video.addEventListener('load', handleVisualizerLoad);
+                } else {
+                    alert("Incorrect password!");
                 }
             });
-        startButton.disabled = true;
-        registerButton.disabled = true;
-        trainButton.disabled = true;
-        analyzeButton.disabled = true;
-        analyzeButton.style.backgroundImage = "url('static/image/training.png')";
-        video.src = '/analyze_model';
-        video.addEventListener('load', handleVisualizerLoad);
+        }
     });
 
     attendanceButton.addEventListener('click', () => {
         const tableBody = document.getElementById('logTable').getElementsByTagName('tbody')[0];
         const table = document.getElementById('attendance-table')
-        
+
         if (attendanceButton.style.backgroundColor === 'maroon') {
             table.style.visibility = 'collapse';
             attendanceButton.style.backgroundImage = "url('static/image/attendance-view.png')";
@@ -148,37 +167,68 @@ document.addEventListener('DOMContentLoaded', () => {
             tableBody.innerHTML = '';  // Clear any existing rows
         }
         else {
-            fetch('/read_attendance')
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                alert(data.error);
-                return;
-                }
-                else {
-                table.style.visibility = 'visible';
-                attendanceButton.style.backgroundImage = "url('static/image/attendance-close.png')";
-                attendanceButton.style.backgroundColor = 'maroon';
-                tableBody.innerHTML = '';  // Clear any existing rows
-                i = 1;
-                
-                data.forEach(row => {
-                    const newRow = tableBody.insertRow();
-                    newRow.insertCell(0).textContent = i;
-                    newRow.insertCell(1).textContent = row.Name;
-                    newRow.insertCell(2).textContent = row.Time;
-                    newRow.insertCell(3).textContent = row.Probability
-                    i++;
+            const password = prompt("Enter password:");
+            if (password) {
+                verifyPassword(password).then(isVerified => {
+                    if (isVerified) {
+                        fetch('/read_attendance')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.error) {
+                                alert(data.error);
+                                return;
+                            }
+                            else {
+                                table.style.visibility = 'visible';
+                                attendanceButton.style.backgroundImage = "url('static/image/attendance-close.png')";
+                                attendanceButton.style.backgroundColor = 'maroon';
+                                tableBody.innerHTML = '';  // Clear any existing rows
+                                i = 1;
+                                
+                                data.forEach(row => {
+                                    const newRow = tableBody.insertRow();
+                                    newRow.insertCell(0).textContent = i;
+                                    newRow.insertCell(1).textContent = row.Name;
+                                    newRow.insertCell(2).textContent = row.Time;
+                                    newRow.insertCell(3).textContent = row.Probability
+                                    i++;
+                                });
+                            }
+                        })
+                        .catch(error => alert(error));
+                    } else {
+                        alert("Incorrect password!");
+                    }
                 });
-                }
-            })
-            .catch(error => alert(error));
+            }
         }
     });
 
-    function handleVideoLoad() {
+    passwordButton.addEventListener('click', () => {
+        const currentPassword = prompt("Enter current password:");
+        if (currentPassword) {
+            verifyPassword(currentPassword).then(isVerified => {
+                if (isVerified) {
+                    const newPassword = prompt("Enter new password:");
+                    if (newPassword) {
+                        updatePassword(currentPassword, newPassword).then(isUpdated => {
+                            if (isUpdated) {
+                                alert("Password changed successfully!");
+                            } else {
+                                alert("Failed to change password!");
+                            }
+                        });
+                    }
+                } else {
+                    alert("Incorrect password!");
+                }
+            });
+        }
+    });
+
+    async function handleVideoLoad() {
         video.removeEventListener('load', handleVideoLoad);
-        const userName = prompt("Enter Name:");
+        const userName = await prompt("Enter Name:");
         if (!userName) {
             alert("User name is required.");
             registerButton.style.backgroundColor = '#6a3acb';
@@ -237,6 +287,30 @@ document.addEventListener('DOMContentLoaded', () => {
         analyzeButton.style.backgroundImage = "url('static/image/analyze.png')";
     }
 
+    async function verifyPassword(password) {
+        const response = await fetch('/verify_password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ password })
+        });
+        const result = await response.json();
+        return result.status === 'success';
+    }
+
+    async function updatePassword(currentPassword, newPassword) {
+        const response = await fetch('/update_password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+        });
+        const result = await response.json();
+        return result.status === 'success';
+    }
+
     fetch('/list_attendance_files')
         .then(response => response.json())
         .then(files => {
@@ -248,29 +322,29 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        fileSelect.addEventListener('change', () => {
-            const selectedFile = fileSelect.value;
-            if (selectedFile) {
-                fetch(`/read_attendance/${selectedFile}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const tableBody = document.getElementById('logTable').getElementsByTagName('tbody')[0];
-                        tableBody.innerHTML = '';  // Clear any existing rows
-    
-                        if (data.error) {
-                            alert(data.error);
-                        } else {
-                            data.forEach((row, index) => {
-                                const newRow = tableBody.insertRow();
-                                newRow.insertCell(0).textContent = index + 1;
-                                newRow.insertCell(1).textContent = row.Name;
-                                newRow.insertCell(2).textContent = row.Time;
-                                newRow.insertCell(3).textContent = row.Probability;
-                            });
-                        }
-                    })
-                    .catch(error => alert(error));
-            }
-        });
+    fileSelect.addEventListener('change', () => {
+        const selectedFile = fileSelect.value;
+        if (selectedFile) {
+            fetch(`/read_attendance/${selectedFile}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('logTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '';  // Clear any existing rows
+
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        data.forEach((row, index) => {
+                            const newRow = tableBody.insertRow();
+                            newRow.insertCell(0).textContent = index + 1;
+                            newRow.insertCell(1).textContent = row.Name;
+                            newRow.insertCell(2).textContent = row.Time;
+                            newRow.insertCell(3).textContent = row.Probability;
+                        });
+                    }
+                })
+                .catch(error => alert(error));
+        }
+    });
     
 });

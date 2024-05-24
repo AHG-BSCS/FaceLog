@@ -9,12 +9,13 @@ import joblib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from flask import Flask, render_template, Response, request, jsonify, send_file
 from threading import Thread
-from facenet_pytorch import InceptionResnetV1
-from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import LabelEncoder
+from cryptography.fernet import Fernet
+from facenet_pytorch import InceptionResnetV1
+from flask import Flask, render_template, Response, request, jsonify, send_file
 
 app = Flask(__name__)
 camera = None
@@ -35,6 +36,33 @@ if not os.path.exists(f'{attendance_folder}.xlsx'):
     attendance = pd.DataFrame(columns=['Name', 'Time', 'Probability'])
 else:
     attendance = pd.read_excel(f'{attendance_folder}.xlsx')
+
+def generate_key():
+    key = Fernet.generate_key()
+    with open('passkey/secret.key', 'wb') as key_file:
+        key_file.write(key)
+    return key
+
+def load_key():
+    os.makedirs('passkey', exist_ok=True)
+    if not os.path.exists('passkey/secret.key'):
+        key = generate_key()
+        return key
+    else:
+        return open('passkey/secret.key', 'rb').read()
+    
+# Load the key
+key = load_key()
+cipher_suite = Fernet(key)
+
+# File to store the encrypted password
+PASSWORD_FILE = 'passkey/encrypt.lock'
+
+# Initialize with a default password if the file doesn't exist
+if not os.path.exists(PASSWORD_FILE):
+    with open(PASSWORD_FILE, 'wb') as file:
+        encrypted_password = cipher_suite.encrypt(b'admin')  # Default password: 'admin'
+        file.write(encrypted_password)
 
 @app.route('/')
 def index():
@@ -260,7 +288,34 @@ def read_attendance(filename):
     data = df.to_dict(orient='records')
     return jsonify(data)
 
+@app.route('/verify_password', methods=['POST'])
+def verify_password():
+    data = request.json
+    password = data.get('password')
+    
+    encrypted_password = read_password()
+    decrypted_password = cipher_suite.decrypt(encrypted_password).decode('utf-8')
+    
+    if password == decrypted_password:
+        return jsonify({'status': 'success'}), 200
+    else:
+        return jsonify({'status': 'failure'}), 401
 
+@app.route('/update_password', methods=['POST'])
+def update_password():
+    data = request.json
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    
+    encrypted_password = read_password()
+    decrypted_password = cipher_suite.decrypt(encrypted_password).decode('utf-8')
+    
+    if current_password == decrypted_password:
+        new_encrypted_password = cipher_suite.encrypt(new_password.encode('utf-8'))
+        write_password(new_encrypted_password)
+        return jsonify({'status': 'success'}), 200
+    else:
+        return jsonify({'status': 'failure'}), 401
 
 # @app.route('/list_cameras', methods=['GET'])]
 # def get_cameras():
@@ -362,6 +417,14 @@ def extract_features(image):
     with torch.no_grad():
         features = facenet_model(image).cpu().numpy().flatten()
     return features
+
+def read_password():
+    with open(PASSWORD_FILE, 'rb') as file:
+        return file.read()
+
+def write_password(encrypted_password):
+    with open(PASSWORD_FILE, 'wb') as file:
+        file.write(encrypted_password)
 
 # def list_cameras():
 #     index = 0

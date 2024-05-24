@@ -87,6 +87,10 @@ button[disabled] {
     background-image: url('../image/attendance-view.png');
 }
 
+#password {
+    background-image: url('../image/password.png');
+}
+
 .video-container {
     position: relative;
     display: inline-block;
