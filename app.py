@@ -130,11 +130,14 @@ def capture_images():
     global camera_mode
 
     user_name = request.json.get('user_name')
+    user_folder = os.path.join('faces', user_name)
     if not user_name:
         return jsonify({"error": "Username is required"}), 401
     
-    user_folder = os.path.join('faces', user_name)
-    os.makedirs(user_folder, exist_ok=True)
+    if os.path.exists(user_folder):
+        return jsonify({"error": "Username already exist"}), 401
+    else:
+        os.makedirs(user_folder, exist_ok=True)
 
     # Capture images
     count = 0
@@ -267,8 +270,8 @@ def analyze_model():
     plt.ylim(transformed_data[:, 1].min() - 0.1, transformed_data[:, 1].max() + 0.1)
     plt.grid(True)
     plt.legend()
-    plt.xlabel('PCA Component Y')
-    plt.ylabel('PCA Component X')
+    plt.xlabel('PCA Component X')
+    plt.ylabel('PCA Component Y')
     plt.title('FaceLog SVM Model Scatter Plot')
     
     # Save the plot to a BytesIO object
