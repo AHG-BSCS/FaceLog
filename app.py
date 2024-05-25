@@ -309,10 +309,11 @@ def get_cameras():
     return jsonify(cameras)
 
 @app.route('/change_camera/<cameraIndex>', methods=['GET'])
-def change_camera(selectedCamera):
+def change_camera(cameraIndex):
     global camera_index
-    camera_index = selectedCamera
+    camera_index = int(cameraIndex)
     return jsonify({"message": "Camera change."}), 200
+
 
 class VideoCamera:
     # Threading for video capture and processing
@@ -444,4 +445,4 @@ def write_password(encrypted_password):
         file.write(encrypted_password)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=5000,debug=False)
+    app.run(host='0.0.0.0',port=5000,debug=True)
