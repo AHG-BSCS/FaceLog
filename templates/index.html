@@ -7,18 +7,41 @@
     <link rel="stylesheet" href="static/css/styles.css">
     <script src="static/js/script.js"></script>
 </head>
-<body">
-    <div class="card">
-        <div class="card-header">FaceLog</div>
-        <div class="card-subtitle">A Real-time Facial Recognition Attendance System</div>
-        <div>
+<body>
+<div class="card">
+    <div class="card-header">FaceLog</div>
+    <div class="card-subtitle">A Real-time Facial Recognition Attendance System</div>
+    <div>
+        <div class="button-container">
             <button id="start"></button>
-            <button id="register"></button>
-            <button id="train"></button>
-            <button id="analyze"></button>
-            <button id="attendance"></button>
-            <button id="password"></button>
+            <div class="tooltip">Start the facial recognition system</div>
         </div>
+
+        <div class="button-container">
+            <button id="register"></button>
+            <div class="tooltip">Register a new Face</div>
+        </div>
+
+        <div class="button-container">
+            <button id="train"></button>
+            <div class="tooltip">Train the recognition model</div>
+        </div>
+        <div class="button-container">
+            <button id="analyze"></button>
+            <div class="tooltip">Analyze facial data</div>
+        </div>
+
+        <div class="button-container">
+            <button id="attendance"></button>
+            <div class="tooltip">Check attendance data</div>
+        </div>
+
+        <div class="button-container">
+            <button id="password"></button>
+            <div class="tooltip">Change admin password</div>
+        </div>
+    </div>
+    
         <div class="camera-container">
             <select id="cameraList">
                 <optgroup id="cameraGroup"></optgroup>
