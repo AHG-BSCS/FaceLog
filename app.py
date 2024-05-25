@@ -118,6 +118,7 @@ def stop_feed():
         camera = None
         camera_mode = None
 
+    # Save the attendance to an Excel file
     if not attendance.empty:
         attendance = attendance.sort_values(by='Name')
         attendance.to_excel(f'{ATTENDANCE_FOLDER}.xlsx', index=False)
@@ -137,13 +138,19 @@ def capture_images():
 
     # Capture images
     count = 0
+    image_number = 1
     while count < 50:
         if camera is None:
             break
+        # Increment the image number if the file already exists
+        while os.path.exists(os.path.join(user_folder, f'{image_number}.jpg')):
+            image_number += 1
+            
         frame = camera.capture_frame()
-        file_path = os.path.join(user_folder, f'{count + 1}.jpg')
+        file_path = os.path.join(user_folder, f'{image_number}.jpg')
         cv2.imwrite(file_path, frame)
         count += 1
+        image_number += 1
         cv2.waitKey(800)
 
     return jsonify({"message": f"Captured {count} images"}), 200
@@ -153,6 +160,10 @@ def training():
     global svm_model
     global label_encoder
     faces_dir = 'faces'
+    image_count = 0
+    face_count = 0
+    no_face = 0
+    multiple_face = 0
     X = []
     y = []
 
@@ -172,12 +183,24 @@ def training():
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
             faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(64, 64))
             
+            # Check if the image has no face or multiple faces
+            if len(faces) == 0:
+                os.remove(image_path)
+                no_face += 1
+                continue
+            elif len(faces) > 1:
+                os.remove(image_path)
+                multiple_face += 1
+                continue
+            
             for (x, z, w, h) in faces:
                 face_img = image[z:z+h, x:x+w]
                 features = extract_features(face_img)
+                face_count += 1
                 break
             X.append(features)
             y.append(person_name)
+            image_count += 1
 
     X = np.array(X)
     y = np.array(y)
@@ -202,8 +225,14 @@ def training():
     unique_classes = svm_model.classes_
     num_classes = len(unique_classes)
 
+    # Print the results
     print("Model Saved")
-    print(f"Unique Faces: {num_classes}")
+    print(f"Unique faces: {num_classes}")
+    print(f"Image processed: {image_count}")
+    print(f"Faces saved: {face_count}")
+    print(f"No face: {no_face}")
+    print(f"Multiple face: {multiple_face}")
+
     for i, class_label in enumerate(unique_classes):
         decoded_label = label_encoder.inverse_transform([class_label])[0]
         print(f"Class {i}: {decoded_label}")
@@ -314,10 +343,10 @@ def change_camera(cameraIndex):
     camera_index = int(cameraIndex)
     return jsonify({"message": "Camera change."}), 200
 
-
 class VideoCamera:
     # Threading for video capture and processing
     global attendance
+    global camera
     global camera_index
 
     def __init__(self):
@@ -381,7 +410,7 @@ def recognize_faces(frame):
 
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    faces = face_cascade.detectMultiScale(gray_frame, scaleFactor=1.1, minNeighbors=5, minSize=(64, 64))
 
     for (x, y, w, h) in faces:
         face_img = frame[y:y+h, x:x+w]

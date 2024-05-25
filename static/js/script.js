@@ -122,12 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             } else {
                                 startButton.disabled = false;
                                 analyzeButton.disabled = false;
+                                trainButton.disabled = false;
+                                registerButton.disabled = false;
+                                trainButton.style.backgroundImage = "url('static/image/train.png')";
                                 alert(data.message);
                             }
                         });
-                    trainButton.disabled = false;
-                    registerButton.disabled = false;
-                    trainButton.style.backgroundImage = "url('static/image/train.png')";
                 } else {
                     alert("Incorrect password!");
                 }
