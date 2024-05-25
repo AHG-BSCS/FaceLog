@@ -38,17 +38,44 @@ button {
     height: 60px;
     background-size: 50px 50px;
     margin-inline: 8px;
-    transition: background-color 0.3s ease;
+    cursor: pointer;
+    transition: transform 0.3s ease;
 }
 
 button:hover {
     background-color: #552da5;
+    transform: translateY(5px);
 }
 
 button[disabled] {
     background-color: gray;
     opacity: 0.6;
     cursor: not-allowed; 
+}
+
+.button-container {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip {
+    visibility: hidden;
+    width: max-content;
+    background-color: #6c757d;
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+    border: 2px solid #ddd;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 115%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.button-container:hover .tooltip {
+    visibility: visible;
 }
 
 #start {
@@ -115,7 +142,8 @@ button[disabled] {
     background-color: rgba(0, 0, 0, 0.40);
     color: white;
     padding: 5px;
-    border-radius: 5px;
+    border-radius: 6px;
+    border: 2px solid #ddd;
 }
 
 #attendance-table {
@@ -138,6 +166,7 @@ label, select, optgroup, option {
 
 select {
     border-style: none;
+    cursor: pointer;
     margin-bottom: 7px;
 }
 
@@ -175,54 +204,4 @@ td {
 
 .time {
     padding-right: 100px;
-}
-
-.button-container {
-    position: relative;
-    display: inline-block;
-}
-
-button {
-    margin: 10px;
-    padding: 10px;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-    position: relative;
-}
-
-button:hover {
-    transform: translateY(10px);
-}
-
-.tooltip {
-    visibility: hidden;
-    width: 140px;
-    background-color: black;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%; 
-    left: 50%;
-    margin-left: -70px; 
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.tooltip::after {
-    content: "";
-    position: absolute;
-    top: 100%; 
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: black transparent transparent transparent;
-}
-
-.button-container:hover .tooltip {
-    visibility: visible;
-    opacity: 1;
 }

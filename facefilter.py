@@ -31,18 +31,18 @@ def face_filter():
                 print(f"No faces: {image_path}")
                 no_face += 1
                 os.remove(image_path)
-                continue
+                # continue
             elif len(faces) > 1:
                 print(f"Multiple faces: {image_path}")
-                os.remove(image_path)
                 multiple_face += 1
-                continue
+                os.remove(image_path)
+                # continue
 
             # Save the faces from the image
             os.makedirs(f'facetest/{person_name}', exist_ok=True)
             for (x, z, w, h) in faces:
-                face_img = image[z:z+h, x:x+w]
-                cv2.imwrite(f'facetest/{person_name}/{image_name}', face_img)
+                # face_img = image[z:z+h, x:x+w]
+                # cv2.imwrite(f'facetest/{person_name}/{face_count}-{image_name}', face_img)
                 face_count += 1
             image_count += 1
         folder_count += 1
