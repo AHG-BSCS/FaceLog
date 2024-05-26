@@ -34,6 +34,31 @@ document.addEventListener('DOMContentLoaded', () => {
             fileSelect.appendChild(option);
         });
     });
+
+    fileSelect.addEventListener('change', () => {
+        const selectedFile = fileSelect.value;
+        if (selectedFile) {
+            fetch(`/read_attendance/${selectedFile}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('logTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = '';  // Clear any existing rows
+
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        data.forEach((row, index) => {
+                            const newRow = tableBody.insertRow();
+                            newRow.insertCell(0).textContent = index + 1;
+                            newRow.insertCell(1).textContent = row.Name;
+                            newRow.insertCell(2).textContent = row.Time;
+                            newRow.insertCell(3).textContent = row.Probability;
+                        });
+                    }
+                })
+                .catch(error => alert(error));
+        }
+    });
     
     fetch('/list_cameras')
         .then(response => response.json())
