@@ -71,7 +71,7 @@ def load_models():
     global svm_model
     global label_encoder
     
-    if os.path.exists('models/svm_model.pkl'):
+    if os.path.exists('models/svm_model.pkl') and os.path.exists('models/label_encoder.pkl') and os.path.exists('models/features.npy') and os.path.exists('models/labels.npy'):
         svm_model = joblib.load('models/svm_model.pkl')
         label_encoder = joblib.load('models/label_encoder.pkl')
     else:
@@ -82,10 +82,6 @@ def load_models():
 def face_recognition():
     global camera
     global camera_mode
-    # global camera_index
-
-    # camera_index = int(request.args.get('cameraIndex'))
-    # camera_index -= 1
 
     if svm_model is None or label_encoder is None:
         return jsonify({"error": "Models Missing"}), 401
@@ -98,10 +94,7 @@ def face_recognition():
 def face_capturing():
     global camera
     global camera_mode
-    # global camera_index
     
-    # camera_index = int(request.args.get('cameraIndex'))
-    # camera_index -= 1
     if camera is None:
         camera = VideoCamera()
         camera_mode = 'capture'
@@ -169,6 +162,8 @@ def training():
     multiple_face = 0
     X = []
     y = []
+
+    os.makedirs('models', exist_ok=True)
 
     if not os.path.exists(faces_dir):
         return jsonify({"error": "No faces found"}), 401
@@ -477,4 +472,4 @@ def write_password(encrypted_password):
         file.write(encrypted_password)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=5000,debug=True)
+    app.run(host='0.0.0.0',port=5000,debug=False)

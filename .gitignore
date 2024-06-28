@@ -1,7 +1,6 @@
-faces/
-facetest/
-test/
 attendance/
+faces/
+test_faces/
+test_save/
 passkey/
-facefilter.py
 scatter_plot.png
