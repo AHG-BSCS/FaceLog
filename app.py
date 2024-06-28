@@ -424,11 +424,11 @@ def recognize_faces(frame):
             existing_record = attendance[attendance['Name'] == person]
             if existing_record.empty:
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 255, 255), 2)
-                text = f'{person} ({proba}%)'
+                text = f'{person} ({proba})'
                 cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
             else:
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                text = f'{person} ({proba}%)'
+                text = f'{person} ({proba})'
                 cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 # If the person exists and the new probability is higher, update the record
                 if proba > existing_record['Probability'].values[0]:

@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
             registerButton.disabled = false;
             trainButton.disabled = false;
             analyzeButton.disabled = false;
-            video.src = null;
+            video.onerror = video.src='static/image/null.png';
             fetch('/stop_feed');
         } else {
             fetch('/load_models')
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             registerButton.style.backgroundColor = '#6a3acb';
             registerButton.style.backgroundImage = "url('static/image/register.png')";
             imageCount.textContent = '';
-            video.src = null;
+            video.onerror = video.src='static/image/null.png';
             startButton.disabled = false;
             trainButton.disabled = false;
             analyzeButton.disabled = false;
@@ -161,30 +161,39 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     analyzeButton.addEventListener('click', () => {
-        const password = prompt("Enter password:");
-        if (password) {
-            verifyPassword(password).then(isVerified => {
-                if (isVerified) {
-                    // Analyzing model takes time depending on the number of data points
-                    fetch('/load_models')
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.error) {
-                                alert(data.error);
-                                return;
-                            }
-                        });
-                    startButton.disabled = true;
-                    registerButton.disabled = true;
-                    trainButton.disabled = true;
-                    analyzeButton.disabled = true;
-                    analyzeButton.style.backgroundImage = "url('static/image/training.png')";
-                    video.src = '/analyze_model';
-                    video.addEventListener('load', handleVisualizerLoad);
-                } else {
-                    alert("Incorrect password!");
-                }
-            });
+        if (analyzeButton.style.backgroundColor === 'maroon') {
+            startButton.disabled = false;
+            registerButton.disabled = false;
+            trainButton.disabled = false;
+            analyzeButton.style.backgroundColor = '#6a3acb'
+            video.onerror = video.src='static/image/null.png';
+        } else {
+            const password = prompt("Enter password:");
+            if (password) {
+                verifyPassword(password).then(isVerified => {
+                    if (isVerified) {
+                        // Analyzing model takes time depending on the number of data points
+                        fetch('/load_models')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.error) {
+                                    alert(data.error);
+                                    return;
+                                }
+                            });
+                        startButton.disabled = true;
+                        registerButton.disabled = true;
+                        trainButton.disabled = true;
+                        analyzeButton.disabled = true;
+                        analyzeButton.style.backgroundColor = 'maroon'
+                        analyzeButton.style.backgroundImage = "url('static/image/training.png')";
+                        video.src = '/analyze_model';
+                        video.addEventListener('load', handleVisualizerLoad);
+                    } else {
+                        alert("Incorrect password!");
+                    }
+                });
+            }
         }
     });
 
@@ -295,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
             startButton.disabled = false;
             trainButton.disabled = false;
             analyzeButton.disabled = false;
-            video.src = null;
+            video.onerror = video.src='static/image/null.png';
             fetch('/stop_feed');
             return;
         } else {
@@ -329,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     clearInterval(flashInterval);
                     registerButton.style.backgroundImage = "url('static/image/register.png')";
                     imageCount.textContent = '';
-                    video.src = null;
+                    video.onerror = video.src='static/image/null.png';
                     fetch('/stop_feed');
                     return;
                 }
@@ -339,9 +348,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleVisualizerLoad() {
         video.removeEventListener('load', handleVisualizerLoad);
-        startButton.disabled = false;
-        registerButton.disabled = false;
-        trainButton.disabled = false;
         analyzeButton.disabled = false;
         analyzeButton.style.backgroundImage = "url('static/image/analyze.png')";
     }
