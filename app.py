@@ -16,6 +16,7 @@ from sklearn.preprocessing import LabelEncoder
 from cryptography.fernet import Fernet
 from facenet_pytorch import InceptionResnetV1
 from flask import Flask, render_template, Response, request, jsonify, send_file
+from waitress import serve
 
 app = Flask(__name__)
 camera = None
@@ -471,5 +472,5 @@ def write_password(encrypted_password):
     with open(PASSWORD_FILE, 'wb') as file:
         file.write(encrypted_password)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=5000,debug=False)
+# if __name__ == '__main__':
+#     app.run(host='0.0.0.0', port=3000, debug=False)
